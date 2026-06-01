@@ -1104,6 +1104,48 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
 </div>
 
 <script>
+// ═══ SUPABASE CONFIG ═══
+const SUPA_URL = 'https://qhwtqpgkchnblbtpoljv.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFod3RxcGdrY2huYmxidHBvbGp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MzQ3NDksImV4cCI6MjA5NTMxMDc0OX0.EBgGbKXd-sk6zgpuwb_MKE_nb3TtGeR0YfcW4V3WlF8';
+
+async function supaFetch(table, method='GET', body=null, query='') {
+  const url = SUPA_URL + '/rest/v1/' + table + query;
+  const opts = {
+    method,
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + SUPA_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': method === 'POST' ? 'resolution=merge-duplicates' : ''
+    }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(url, opts);
+  if (!r.ok) return null;
+  return method === 'GET' ? r.json() : true;
+}
+
+// Upsert today's health metric row
+async function supaUpsertHealth(data) {
+  return supaFetch('health_metrics', 'POST', data, '');
+}
+
+// Get latest health metrics (last 7 days)
+async function supaGetHealth(days=7) {
+  const since = new Date(Date.now() - days*86400000).toISOString().slice(0,10);
+  return supaFetch('health_metrics', 'GET', null, '?date=gte.' + since + '&order=date.desc');
+}
+
+// Upsert weight entry
+async function supaUpsertWeight(date, weight_lbs) {
+  return supaFetch('weight_log', 'POST', {date, weight_lbs}, '');
+}
+
+// Get weight log
+async function supaGetWeight(limit=14) {
+  return supaFetch('weight_log', 'GET', null, '?order=date.desc&limit=' + limit);
+}
+
 // ═══ SCREEN MANAGER ═══
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('visible'));
@@ -1780,6 +1822,47 @@ renderBriefingReading();
 fetchWeatherBriefing();
 
 // ═══ DASHBOARD SCREEN ═══
+async function loadSupabaseData() {
+  try {
+    // Load latest health metrics
+    const health = await supaGetHealth(1);
+    if (health && health.length > 0) {
+      const h = health[0];
+      // Sleep card
+      const scoreEl = document.querySelector('.sleep-score-val');
+      if (scoreEl && h.sleep_score) scoreEl.textContent = h.sleep_score;
+      const dur = document.querySelectorAll('.sleep-stat-val');
+      if (h.sleep_hours && dur[0]) dur[0].textContent = h.sleep_hours + 'h';
+      if (h.resting_hr && dur[2]) dur[2].textContent = h.resting_hr + ' bpm';
+      if (h.body_battery_max) {
+        const bb = document.querySelector('.sleep-score-label');
+        if (bb) bb.textContent = 'BATTERY: ' + h.body_battery_max;
+      }
+      // Update quality badge
+      const badge = document.querySelector('.sleep-quality');
+      if (badge && h.sleep_score) {
+        if (h.sleep_score >= 80) { badge.className = 'sleep-quality quality-good'; badge.textContent = 'GOOD RECOVERY'; }
+        else if (h.sleep_score >= 60) { badge.className = 'sleep-quality quality-fair'; badge.textContent = 'FAIR RECOVERY'; }
+        else { badge.className = 'sleep-quality quality-poor'; badge.textContent = 'POOR RECOVERY'; }
+      }
+    }
+
+    // Load weight from Supabase (overrides localStorage)
+    const weights = await supaGetWeight(14);
+    if (weights && weights.length > 0) {
+      weightLog = weights.map(w => ({
+        date: w.date, val: w.weight_lbs, unit: 'lbs'
+      }));
+      store.set('weightLog', weightLog);
+      const hw = document.getElementById('home-weight');
+      if (hw) hw.textContent = weights[0].weight_lbs;
+      renderWeightLog();
+    }
+  } catch(e) {
+    console.log('Supabase load error:', e);
+  }
+}
+
 function initDashboard() {
   const nav = document.getElementById('mobile-nav');
   nav.style.display = 'flex';
@@ -1795,6 +1878,7 @@ function initDashboard() {
   updateHomeRing();
   updateHomeSats();
   dashTick();
+  loadSupabaseData();
   setInterval(dashTick, 1000);
   setInterval(updateHomeRing, 60000);
   setInterval(fetchWeather, 60 * 60 * 1000);
@@ -2058,15 +2142,20 @@ function quickToggleHabit(hid, di) {
 // ── WEIGHT ──
 let weightLog = store.get('weightLog') || [];
 
-function logWeight() {
+async function logWeight() {
   const val = document.getElementById('weight-input').value;
   const unit = document.getElementById('weight-unit').value;
   if (!val) return;
+  const lbs = unit === 'kg' ? parseFloat(val) * 2.20462 : parseFloat(val);
+  const dateStr = new Date().toISOString().slice(0,10);
   weightLog.unshift({ date: new Date().toLocaleDateString('en-CA'), val: parseFloat(val), unit });
   store.set('weightLog', weightLog);
   document.getElementById('weight-input').value = '';
-  document.getElementById('home-weight').textContent = parseFloat(val).toFixed(1);
+  const hw = document.getElementById('home-weight');
+  if (hw) hw.textContent = parseFloat(val).toFixed(1);
   renderWeightLog();
+  // Save to Supabase
+  await supaUpsertWeight(dateStr, Math.round(lbs * 10) / 10);
 }
 
 function renderWeightLog() {
