@@ -762,7 +762,7 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
 
           <!-- Tasks -->
-          <div class="hc" onclick="navigate('todo',document.querySelector('#sidebar .nav-item:nth-child(2)'))">
+          <div class="hc" onclick="navigateTo('todo')">
             <div class="hc-label">TASKS</div>
             <div class="hc-val" id="home-tasks">3</div>
             <div class="hc-sub">remaining</div>
@@ -770,21 +770,21 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
           </div>
 
           <!-- Workout -->
-          <div class="hc" onclick="navigate('health',document.querySelector('#sidebar .nav-item:nth-child(4)'))">
+          <div class="hc" onclick="navigateTo('health')">
             <div class="hc-label">WORKOUT</div>
             <div style="font-size:11px;font-weight:700;color:#ff4d6d;letter-spacing:0.05em;margin:4px 0;line-height:1.2" id="home-workout">Upper Body</div>
             <div class="hc-sub">push day</div>
           </div>
 
           <!-- Weight -->
-          <div class="hc" onclick="navigate('health',document.querySelector('#sidebar .nav-item:nth-child(4)'))">
+          <div class="hc" onclick="navigateTo('health')">
             <div class="hc-label">WEIGHT</div>
             <div class="hc-val" style="color:var(--text-secondary)" id="home-weight">—</div>
             <div class="hc-sub">lbs · log today</div>
           </div>
 
           <!-- Reading -->
-          <div class="hc" onclick="navigate('reading',document.querySelector('#sidebar .nav-item:nth-child(6)'))">
+          <div class="hc" onclick="navigateTo('reading')">
             <div class="hc-label">READING</div>
             <div class="hc-val" style="font-size:18px;color:var(--pink)" id="home-read-pct">35%</div>
             <div class="hc-sub">Atomic Habits</div>
@@ -792,14 +792,14 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
           </div>
 
           <!-- Habit streak -->
-          <div class="hc" onclick="navigate('habits',document.querySelector('#sidebar .nav-item:nth-child(5)'))">
+          <div class="hc" onclick="navigateTo('habits')">
             <div class="hc-label">STREAK</div>
             <div class="hc-val" style="color:var(--orange)" id="home-streak">4</div>
             <div class="hc-sub">days 🔥</div>
           </div>
 
           <!-- Budget -->
-          <div class="hc" onclick="navigate('budget',document.querySelector('#sidebar .nav-item:nth-child(3)'))">
+          <div class="hc" onclick="navigateTo('budget')">
             <div class="hc-label">BUDGET</div>
             <div class="hc-val" style="font-size:18px;color:var(--orange)">$<span id="home-spend">1,240</span></div>
             <div class="hc-sub">of $2,500</div>
@@ -1433,6 +1433,16 @@ function goTo(toIdx, fromDrag) {
     updateDots();
     isAnimating = false;
   }, DUR + 20);
+}
+
+// Navigate by page name — finds and activates the correct sidebar item
+function navigateTo(page) {
+  const pages = ['home','todo','budget','health','habits','reading','notes'];
+  const idx = pages.indexOf(page);
+  if (idx === -1) return;
+  const sidebarItems = document.querySelectorAll('#sidebar .nav-item');
+  const mobItems = document.querySelectorAll('#mobile-nav .mob-nav-item');
+  navigate(page, sidebarItems[idx] || null);
 }
 
 function nextCard() { goTo(current + 1); }
