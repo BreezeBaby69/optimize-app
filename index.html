@@ -46,12 +46,26 @@
 }
 
 html, body { width:100%; height:100%; background:var(--bg); color:var(--text-primary); font-family:'Share Tech Mono',monospace; overflow:hidden; }
-/* iPhone safe areas — handles notch + home bar */
-#screen-welcome, #screen-briefing, #screen-dashboard {
+/* iPhone safe areas — notch top, home bar bottom */
+#topbar {
+  padding-top: env(safe-area-inset-top);
+  height: calc(var(--topbar-h) + env(safe-area-inset-top));
+}
+#hud-top {
+  padding-top: env(safe-area-inset-top);
+  height: calc(52px + env(safe-area-inset-top));
+}
+.w-main {
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
 }
-#mobile-nav { padding-bottom: env(safe-area-inset-bottom); }
+#mobile-nav {
+  padding-bottom: env(safe-area-inset-bottom);
+  height: calc(var(--mobile-bar) + env(safe-area-inset-bottom));
+}
+#main {
+  padding-bottom: calc(var(--mobile-bar) + env(safe-area-inset-bottom)) !important;
+}
 
 /* Cursor — desktop only */
 #cursor { position:fixed; width:20px; height:20px; border:1.5px solid var(--cyan); border-radius:50%; pointer-events:none; z-index:9999; transform:translate(-50%,-50%); transition:width .15s,height .15s; mix-blend-mode:screen; }
