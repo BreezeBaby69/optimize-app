@@ -46,25 +46,72 @@
 }
 
 html, body { width:100%; height:100%; background:var(--bg); color:var(--text-primary); font-family:'Share Tech Mono',monospace; overflow:hidden; }
-/* iPhone safe areas — notch top, home bar bottom */
-#topbar {
+/* ── IPHONE SAFE AREAS ──
+   viewport-fit=cover lets us use the full screen.
+   We then manually pad each top element by the status bar height
+   and each bottom element by the home indicator height. */
+
+/* Every full-screen layer needs a top offset */
+.screen {
   padding-top: env(safe-area-inset-top);
-  height: calc(var(--topbar-h) + env(safe-area-inset-top));
+  padding-bottom: env(safe-area-inset-bottom);
 }
+
+/* Welcome screen: shift content down past status bar */
+.hud-top {
+  top: calc(24px + env(safe-area-inset-top)) !important;
+}
+.corner.tl, .corner.tr {
+  top: calc(20px + env(safe-area-inset-top)) !important;
+}
+.side-line {
+  top: calc(50% + env(safe-area-inset-top) / 2) !important;
+}
+.hud-bottom {
+  bottom: calc(24px + env(safe-area-inset-bottom)) !important;
+}
+.corner.bl, .corner.br {
+  bottom: calc(20px + env(safe-area-inset-bottom)) !important;
+}
+
+/* Briefing screen top bar */
 #hud-top {
   padding-top: env(safe-area-inset-top);
-  height: calc(52px + env(safe-area-inset-top));
+  height: calc(52px + env(safe-area-inset-top)) !important;
+  align-items: flex-end;
+  padding-bottom: 10px;
 }
-.w-main {
+#card-counter {
+  top: calc(60px + env(safe-area-inset-top)) !important;
+}
+#progress-dots {
+  bottom: calc(32px + env(safe-area-inset-bottom)) !important;
+}
+#skip-btn {
+  bottom: calc(28px + env(safe-area-inset-bottom)) !important;
+}
+
+/* Dashboard top bar */
+#topbar {
   padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
+  height: calc(var(--topbar-h) + env(safe-area-inset-top)) !important;
+  align-items: flex-end;
+  padding-bottom: 10px;
 }
+/* Dashboard sidebar needs to clear topbar */
+#body-row {
+  height: calc(100% - var(--topbar-h) - env(safe-area-inset-top));
+}
+
+/* Mobile nav — push content above home bar */
 #mobile-nav {
   padding-bottom: env(safe-area-inset-bottom);
-  height: calc(var(--mobile-bar) + env(safe-area-inset-bottom));
+  height: calc(var(--mobile-bar) + env(safe-area-inset-bottom)) !important;
 }
-#main {
-  padding-bottom: calc(var(--mobile-bar) + env(safe-area-inset-bottom)) !important;
+@media(max-width:768px) {
+  #main {
+    padding-bottom: calc(var(--mobile-bar) + env(safe-area-inset-bottom)) !important;
+  }
 }
 
 /* Cursor — desktop only */
