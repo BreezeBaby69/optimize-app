@@ -464,6 +464,28 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
   .view{padding:16px}
   .topbar-status{display:none}
 }
+
+/* ── HOME COMMAND CENTER ── */
+.hc {
+  background:var(--card);
+  border:1px solid var(--card-border);
+  border-radius:4px;
+  padding:12px 12px 10px;
+  cursor:pointer;
+  transition:border-color .2s;
+  position:relative;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  min-height:80px;
+}
+.hc::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,var(--cyan),transparent); opacity:.15; }
+.hc:hover { border-color:var(--card-border-hover); }
+.hc-label { font-size:7px; letter-spacing:0.3em; color:var(--text-muted); margin-bottom:4px; }
+.hc-val { font-family:Orbitron,monospace; font-size:22px; font-weight:700; color:var(--cyan); line-height:1; }
+.hc-sub { font-size:8px; letter-spacing:0.1em; color:var(--text-muted); margin-top:3px; flex:1; }
+.hc-bar { height:2px; background:rgba(0,245,255,0.08); border-radius:1px; margin-top:8px; overflow:hidden; }
+.hc-bar-fill { height:100%; border-radius:1px; transition:width .8s ease; }
 </style>
 </head>
 <body>
@@ -700,94 +722,121 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
       </nav>
       <main id="main">
         <!-- ═══════════════ HOME ═══════════════ -->
-      <div class="view active" id="view-home">
-        <div class="page-header">
-          <div class="page-title" id="home-greeting">GOOD MORNING, ORIN</div>
-          <div class="page-sub" id="home-date">LOADING...</div>
+      <div class="view active" id="view-home" style="padding:16px 16px 8px;">
+
+        <!-- Greeting -->
+        <div style="text-align:center;margin-bottom:12px">
+          <div style="font-family:Orbitron,monospace;font-size:clamp(11px,3vw,14px);letter-spacing:0.25em;color:var(--text-muted)" id="home-date">LOADING...</div>
+          <div style="font-family:Orbitron,monospace;font-size:clamp(16px,4vw,22px);font-weight:700;letter-spacing:0.15em;color:var(--cyan);text-shadow:0 0 16px rgba(0,245,255,0.3);margin-top:2px" id="home-greeting">GOOD MORNING, ORIN</div>
         </div>
 
-        <!-- Stat row -->
-        <div class="grid-4">
-          <div class="card">
-            <div class="card-title">Tasks Today</div>
-            <div class="stat-val" id="home-tasks">3</div>
-            <div class="stat-delta">remaining</div>
-          </div>
-          <div class="card">
-            <div class="card-title">Weight</div>
-            <div class="stat-val"><span id="home-weight">—</span><span class="stat-unit">lbs</span></div>
-            <div class="stat-delta">log today</div>
-          </div>
-          <div class="card">
-            <div class="card-title">Monthly Spend</div>
-            <div class="stat-val orange">$<span id="home-spend">1,240</span></div>
-            <div class="stat-delta">of $2,500 budget</div>
-          </div>
-          <div class="card">
-            <div class="card-title">Habit Streak</div>
-            <div class="stat-val green"><span id="home-streak">4</span><span class="stat-unit">days</span></div>
-            <div class="stat-delta up">↑ personal best</div>
-          </div>
-        </div>
-
-        <!-- Weather + Quick Tasks -->
-        <div class="grid-2-1">
-          <div class="card">
-            <div class="card-title">Edmonton Weather</div>
-            <div class="weather-main">
-              <div>
-                <div style="display:flex;align-items:baseline;gap:6px">
-                  <div class="weather-temp" id="w-temp">—°</div>
-                  <div style="font-size:13px;color:var(--text-muted)">C</div>
-                </div>
-                <div class="weather-desc" id="w-desc">Fetching...</div>
-              </div>
-              <div class="weather-icon" id="w-icon">🌐</div>
-            </div>
-            <div class="weather-row">
-              <div class="weather-stat">Wind <span id="w-wind">—</span> km/h</div>
-              <div class="weather-stat">Humidity <span id="w-hum">—</span>%</div>
-              <div class="weather-stat">UV <span id="w-uv">—</span></div>
-            </div>
-            <div class="forecast" id="forecast-strip">
-              <div style="font-size:9px;color:var(--text-muted);letter-spacing:0.1em;padding:8px 0">Loading forecast...</div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-title">Today's Tasks</div>
-            <div id="home-todo-list" style="display:flex;flex-direction:column;gap:6px">
-              <!-- populated by JS -->
-            </div>
-            <div style="margin-top:12px">
-              <span class="btn sm" onclick="navigate('todo',null)">VIEW ALL →</span>
-            </div>
+        <!-- CENTER RING -->
+        <div style="position:relative;width:220px;height:220px;margin:0 auto 16px">
+          <svg width="220" height="220" style="position:absolute;top:0;left:0">
+            <!-- Outer decorative ring -->
+            <circle cx="110" cy="110" r="104" fill="none" stroke="rgba(0,245,255,0.06)" stroke-width="1"/>
+            <!-- Tick marks -->
+            <circle cx="110" cy="110" r="104" fill="none" stroke="rgba(0,245,255,0.15)" stroke-width="1.5" stroke-dasharray="2 14.5" stroke-linecap="round"/>
+            <!-- Background track -->
+            <circle cx="110" cy="110" r="90" fill="none" stroke="rgba(0,245,255,0.08)" stroke-width="12"/>
+            <!-- Progress arc — filled by JS -->
+            <circle cx="110" cy="110" r="90" fill="none" stroke="var(--cyan)" stroke-width="12"
+              stroke-linecap="round"
+              stroke-dasharray="565.5"
+              stroke-dashoffset="565.5"
+              transform="rotate(-90 110 110)"
+              id="day-ring"
+              style="filter:drop-shadow(0 0 8px rgba(0,245,255,0.6));transition:stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1)"/>
+            <!-- Inner glow ring -->
+            <circle cx="110" cy="110" r="78" fill="rgba(0,245,255,0.02)" stroke="rgba(0,245,255,0.08)" stroke-width="0.5"/>
+          </svg>
+          <!-- Center content -->
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+            <div style="font-family:Orbitron,monospace;font-size:42px;font-weight:900;color:var(--cyan);line-height:1;text-shadow:0 0 20px rgba(0,245,255,0.5)" id="day-pct">0%</div>
+            <div style="font-size:8px;letter-spacing:0.3em;color:var(--text-muted);margin-top:4px">DAY COMPLETE</div>
+            <div style="font-size:9px;letter-spacing:0.15em;color:var(--text-secondary);margin-top:6px" id="day-remaining">— hrs left</div>
           </div>
         </div>
 
-        <!-- Reading + Habits snapshot -->
-        <div class="grid-2">
-          <div class="card">
-            <div class="card-title">Current Read</div>
-            <div id="home-book" style="display:flex;align-items:center;gap:12px">
-              <div style="font-size:28px">📖</div>
-              <div>
-                <div style="font-size:11px;color:var(--text-primary);letter-spacing:0.08em" id="home-book-title">Atomic Habits</div>
-                <div style="font-size:9px;color:var(--text-muted);letter-spacing:0.12em;margin:4px 0">James Clear</div>
-                <div style="height:2px;background:rgba(0,245,255,0.08);border-radius:2px;width:140px">
-                  <div style="height:100%;width:35%;background:var(--cyan);box-shadow:0 0 8px rgba(0,245,255,0.5);border-radius:2px"></div>
-                </div>
-                <div style="font-size:8px;color:var(--text-muted);margin-top:4px">35% complete</div>
-              </div>
-            </div>
+        <!-- STAT GRID — 3 columns x 2 rows -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
+
+          <!-- Tasks -->
+          <div class="hc" onclick="navigate('todo',document.querySelector('#sidebar .nav-item:nth-child(2)'))">
+            <div class="hc-label">TASKS</div>
+            <div class="hc-val" id="home-tasks">3</div>
+            <div class="hc-sub">remaining</div>
+            <div class="hc-bar"><div class="hc-bar-fill" id="home-tasks-bar" style="width:0%;background:var(--cyan)"></div></div>
           </div>
-          <div class="card">
-            <div class="card-title">Today's Habits</div>
-            <div id="home-habits" style="display:flex;flex-direction:column;gap:8px">
-              <!-- populated by JS -->
-            </div>
+
+          <!-- Workout -->
+          <div class="hc" onclick="navigate('health',document.querySelector('#sidebar .nav-item:nth-child(4)'))">
+            <div class="hc-label">WORKOUT</div>
+            <div style="font-size:11px;font-weight:700;color:#ff4d6d;letter-spacing:0.05em;margin:4px 0;line-height:1.2" id="home-workout">Upper Body</div>
+            <div class="hc-sub">push day</div>
           </div>
+
+          <!-- Weight -->
+          <div class="hc" onclick="navigate('health',document.querySelector('#sidebar .nav-item:nth-child(4)'))">
+            <div class="hc-label">WEIGHT</div>
+            <div class="hc-val" style="color:var(--text-secondary)" id="home-weight">—</div>
+            <div class="hc-sub">lbs · log today</div>
+          </div>
+
+          <!-- Reading -->
+          <div class="hc" onclick="navigate('reading',document.querySelector('#sidebar .nav-item:nth-child(6)'))">
+            <div class="hc-label">READING</div>
+            <div class="hc-val" style="font-size:18px;color:var(--pink)" id="home-read-pct">35%</div>
+            <div class="hc-sub">Atomic Habits</div>
+            <div class="hc-bar"><div class="hc-bar-fill" id="home-read-bar" style="width:35%;background:var(--pink)"></div></div>
+          </div>
+
+          <!-- Habit streak -->
+          <div class="hc" onclick="navigate('habits',document.querySelector('#sidebar .nav-item:nth-child(5)'))">
+            <div class="hc-label">STREAK</div>
+            <div class="hc-val" style="color:var(--orange)" id="home-streak">4</div>
+            <div class="hc-sub">days 🔥</div>
+          </div>
+
+          <!-- Budget -->
+          <div class="hc" onclick="navigate('budget',document.querySelector('#sidebar .nav-item:nth-child(3)'))">
+            <div class="hc-label">BUDGET</div>
+            <div class="hc-val" style="font-size:18px;color:var(--orange)">$<span id="home-spend">1,240</span></div>
+            <div class="hc-sub">of $2,500</div>
+            <div class="hc-bar"><div class="hc-bar-fill" id="home-budget-bar" style="width:50%;background:var(--orange)"></div></div>
+          </div>
+
         </div>
+
+        <!-- Weather strip -->
+        <div style="background:var(--card);border:1px solid var(--card-border);border-radius:4px;padding:12px 16px;display:flex;align-items:center;gap:12px;position:relative;overflow:hidden">
+          <div style="font-size:28px" id="w-icon">🌐</div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:baseline;gap:6px">
+              <div style="font-family:Orbitron,monospace;font-size:26px;font-weight:700;color:var(--cyan)" id="w-temp">—°</div>
+              <div style="font-size:9px;letter-spacing:0.15em;color:var(--text-muted)">C · EDMONTON</div>
+            </div>
+            <div style="font-size:9px;letter-spacing:0.15em;color:var(--text-secondary);margin-top:2px" id="w-desc">Fetching...</div>
+          </div>
+          <div style="display:flex;gap:16px">
+            <div style="text-align:center">
+              <div style="font-size:8px;letter-spacing:0.12em;color:var(--text-muted)">WIND</div>
+              <div style="font-size:10px;color:var(--text-secondary);margin-top:2px" id="w-wind-home">—</div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:8px;letter-spacing:0.12em;color:var(--text-muted)">FEELS</div>
+              <div style="font-size:10px;color:var(--text-secondary);margin-top:2px" id="w-feels-home">—°</div>
+            </div>
+          </div>
+          <!-- hidden elements kept for compatibility with fetchWeather() -->
+          <span id="w-hum" style="display:none"></span>
+          <span id="w-uv" style="display:none"></span>
+          <span id="forecast-strip" style="display:none"></span>
+          <span id="home-todo-list" style="display:none"></span>
+          <span id="home-habits" style="display:none"></span>
+          <span id="home-book-title" style="display:none"></span>
+        </div>
+
       </div>
 
       <!-- ═══════════════ TO-DO ═══════════════ -->
@@ -1733,9 +1782,66 @@ function initDashboard() {
   drawBudgetChart();
   updateBadge();
   fetchWeather();
+  updateHomeRing();
+  updateHomeSats();
   dashTick();
   setInterval(dashTick, 1000);
+  setInterval(updateHomeRing, 60000);
   setInterval(fetchWeather, 60 * 60 * 1000);
+}
+
+function updateHomeRing() {
+  const now = new Date();
+  const totalMins = 24 * 60;
+  const elapsed = now.getHours() * 60 + now.getMinutes();
+  const pct = Math.round((elapsed / totalMins) * 100);
+  const remaining = totalMins - elapsed;
+  const hrsLeft = Math.floor(remaining / 60);
+  const minsLeft = remaining % 60;
+
+  const ring = document.getElementById('day-ring');
+  const circumference = 565.5;
+  if (ring) ring.style.strokeDashoffset = circumference - (circumference * pct / 100);
+
+  const pctEl = document.getElementById('day-pct');
+  if (pctEl) pctEl.textContent = pct + '%';
+
+  const remEl = document.getElementById('day-remaining');
+  if (remEl) remEl.textContent = hrsLeft + 'h ' + minsLeft + 'm remaining';
+}
+
+function updateHomeSats() {
+  // Tasks bar
+  const todos = storeGet('todos') || [];
+  const total = todos.length || 1;
+  const active = todos.filter(t => !t.done).length;
+  const taskEl = document.getElementById('home-tasks');
+  if (taskEl) taskEl.textContent = active;
+  const taskBar = document.getElementById('home-tasks-bar');
+  if (taskBar) taskBar.style.width = Math.round(((total - active) / total) * 100) + '%';
+
+  // Weight
+  const wLog = storeGet('weightLog') || [];
+  const wEl = document.getElementById('home-weight');
+  if (wEl) wEl.textContent = wLog.length ? wLog[0].val : '—';
+
+  // Streak
+  const habits = storeGet('habits') || [];
+  const maxStreak = habits.reduce((m, h) => Math.max(m, h.streak || 0), 0);
+  const strEl = document.getElementById('home-streak');
+  if (strEl) strEl.textContent = maxStreak;
+
+  // Reading
+  const pages = storeGet('pagesRead') || 84;
+  const readPct = Math.round((pages / 240) * 100);
+  const readEl = document.getElementById('home-read-pct');
+  if (readEl) readEl.textContent = readPct + '%';
+  const readBar = document.getElementById('home-read-bar');
+  if (readBar) readBar.style.width = readPct + '%';
+
+  // Budget bar
+  const budgetBar = document.getElementById('home-budget-bar');
+  if (budgetBar) budgetBar.style.width = Math.round((1240 / 2500) * 100) + '%';
 }
 
 function dashTick() {
@@ -2041,10 +2147,18 @@ async function fetchWeather() {
     const getIcon = code => { for(const k of Object.keys(icons).sort((a,b)=>b-a)) { if(code >= +k) return icons[k]; } return '🌡️'; };
     const getDesc = code => { for(const k of Object.keys(descs).sort((a,b)=>b-a)) { if(code >= +k) return descs[k]; } return 'Unknown'; };
 
-    document.getElementById('w-temp').textContent = Math.round(c.temperature_2m) + '°';
+    const tempVal = Math.round(c.temperature_2m);
+    document.getElementById('w-temp').textContent = tempVal + '°';
+    const feelsHome = document.getElementById('w-feels-home');
+    if (feelsHome) feelsHome.textContent = Math.round(c.apparent_temperature ?? c.temperature_2m) + '°';
     document.getElementById('w-desc').textContent = getDesc(wc).toUpperCase();
     document.getElementById('w-icon').textContent = getIcon(wc);
     document.getElementById('w-wind').textContent = Math.round(c.windspeed_10m);
+    const windHome = document.getElementById('w-wind-home');
+    if (windHome) {
+      const spd = c.windspeed_10m;
+      windHome.textContent = spd < 5 ? 'Calm' : spd < 20 ? 'Light' : spd < 35 ? 'Breezy' : spd < 50 ? 'Windy' : 'Strong';
+    }
     document.getElementById('w-hum').textContent = c.relative_humidity_2m;
     document.getElementById('w-uv').textContent = Math.round(c.uv_index ?? 0);
 
