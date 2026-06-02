@@ -889,116 +889,104 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
       </nav>
       <main id="main">
         <!-- ═══════════════ HOME ═══════════════ -->
-      <div class="view active" id="view-home" style="padding:16px 16px 8px;">
+      <div class="view active" id="view-home" style="padding:12px;height:100%;display:flex;flex-direction:column;gap:8px">
 
-        <!-- Greeting -->
-        <div style="text-align:center;margin-bottom:12px">
-          <div style="font-family:Orbitron,monospace;font-size:clamp(11px,3vw,14px);letter-spacing:0.25em;color:var(--text-muted)" id="home-date">LOADING...</div>
-          <div style="font-family:Orbitron,monospace;font-size:clamp(16px,4vw,22px);font-weight:700;letter-spacing:0.15em;color:var(--cyan);text-shadow:0 0 16px rgba(0,245,255,0.3);margin-top:2px" id="home-greeting">GOOD MORNING, ORIN</div>
+        <!-- GREETING -->
+        <div style="text-align:center;padding:4px 0">
+          <div style="font-family:Orbitron,monospace;font-size:10px;letter-spacing:0.25em;color:var(--text-muted)" id="home-date">LOADING...</div>
+          <div style="font-family:Orbitron,monospace;font-size:clamp(14px,3vw,20px);font-weight:700;letter-spacing:0.12em;color:var(--cyan);text-shadow:0 0 16px rgba(0,245,255,0.3);margin-top:2px" id="home-greeting">GOOD MORNING, ORIN</div>
         </div>
 
-        <!-- CENTER RING -->
-        <div style="position:relative;width:220px;height:220px;margin:0 auto 16px">
-          <svg width="220" height="220" style="position:absolute;top:0;left:0">
-            <!-- Outer decorative ring -->
-            <circle cx="110" cy="110" r="104" fill="none" stroke="rgba(0,245,255,0.06)" stroke-width="1"/>
-            <!-- Tick marks -->
-            <circle cx="110" cy="110" r="104" fill="none" stroke="rgba(0,245,255,0.15)" stroke-width="1.5" stroke-dasharray="2 14.5" stroke-linecap="round"/>
-            <!-- Background track -->
-            <circle cx="110" cy="110" r="90" fill="none" stroke="rgba(0,245,255,0.08)" stroke-width="12"/>
-            <!-- Progress arc — filled by JS -->
-            <circle cx="110" cy="110" r="90" fill="none" stroke="var(--cyan)" stroke-width="12"
-              stroke-linecap="round"
-              stroke-dasharray="565.5"
-              stroke-dashoffset="565.5"
-              transform="rotate(-90 110 110)"
-              id="day-ring"
-              style="filter:drop-shadow(0 0 8px rgba(0,245,255,0.6));transition:stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1)"/>
-            <!-- Inner glow ring -->
-            <circle cx="110" cy="110" r="78" fill="rgba(0,245,255,0.02)" stroke="rgba(0,245,255,0.08)" stroke-width="0.5"/>
-          </svg>
-          <!-- Center content -->
-          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
-            <div style="font-family:Orbitron,monospace;font-size:42px;font-weight:900;color:var(--cyan);line-height:1;text-shadow:0 0 20px rgba(0,245,255,0.5)" id="day-pct">0%</div>
-            <div style="font-size:8px;letter-spacing:0.3em;color:var(--text-muted);margin-top:4px">DAY COMPLETE</div>
-            <div style="font-size:9px;letter-spacing:0.15em;color:var(--text-secondary);margin-top:6px" id="day-remaining">— hrs left</div>
-          </div>
-        </div>
+        <!-- MAIN ROW: left stats | center ring | right stats -->
+        <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;flex:0 0 auto">
 
-        <!-- STAT GRID — 3 columns x 2 rows -->
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
-
-          <!-- Tasks -->
-          <div class="hc" onclick="navigateTo('todo')">
-            <div class="hc-label">TASKS</div>
-            <div class="hc-val" id="home-tasks">3</div>
-            <div class="hc-sub">remaining</div>
-            <div class="hc-bar"><div class="hc-bar-fill" id="home-tasks-bar" style="width:0%;background:var(--cyan)"></div></div>
+          <!-- LEFT COLUMN -->
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div class="hc" onclick="navigateTo('todo')">
+              <div class="hc-label">TASKS</div>
+              <div class="hc-val" id="home-tasks">3</div>
+              <div class="hc-sub">remaining</div>
+              <div class="hc-bar"><div class="hc-bar-fill" id="home-tasks-bar" style="width:0%;background:var(--cyan)"></div></div>
+            </div>
+            <div class="hc" onclick="navigateTo('reading')">
+              <div class="hc-label">READING</div>
+              <div class="hc-val" style="font-size:18px;color:var(--pink)" id="home-read-pct">35%</div>
+              <div class="hc-sub">Atomic Habits</div>
+              <div class="hc-bar"><div class="hc-bar-fill" id="home-read-bar" style="width:35%;background:var(--pink)"></div></div>
+            </div>
+            <div class="hc" onclick="navigateTo('habits')">
+              <div class="hc-label">STREAK</div>
+              <div class="hc-val" style="color:var(--orange)" id="home-streak">4</div>
+              <div class="hc-sub">days 🔥</div>
+            </div>
           </div>
 
-          <!-- Workout -->
-          <div class="hc" onclick="navigateTo('health')">
-            <div class="hc-label">WORKOUT</div>
-            <div style="font-size:11px;font-weight:700;color:#ff4d6d;letter-spacing:0.05em;margin:4px 0;line-height:1.2" id="home-workout">Upper Body</div>
-            <div class="hc-sub">push day</div>
+          <!-- CENTER RING -->
+          <div style="position:relative;width:190px;height:190px;flex-shrink:0">
+            <svg width="190" height="190" style="position:absolute;top:0;left:0">
+              <circle cx="95" cy="95" r="88" fill="none" stroke="rgba(0,245,255,0.06)" stroke-width="1"/>
+              <circle cx="95" cy="95" r="88" fill="none" stroke="rgba(0,245,255,0.12)" stroke-width="1.5" stroke-dasharray="2 12" stroke-linecap="round"/>
+              <circle cx="95" cy="95" r="75" fill="none" stroke="rgba(0,245,255,0.08)" stroke-width="12"/>
+              <circle cx="95" cy="95" r="75" fill="none" stroke="var(--cyan)" stroke-width="12"
+                stroke-linecap="round"
+                stroke-dasharray="471.2"
+                stroke-dashoffset="471.2"
+                transform="rotate(-90 95 95)"
+                id="day-ring"
+                style="filter:drop-shadow(0 0 8px rgba(0,245,255,0.6));transition:stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1)"/>
+              <circle cx="95" cy="95" r="63" fill="rgba(0,245,255,0.02)" stroke="rgba(0,245,255,0.06)" stroke-width="0.5"/>
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+              <div style="font-family:Orbitron,monospace;font-size:36px;font-weight:900;color:var(--cyan);line-height:1;text-shadow:0 0 20px rgba(0,245,255,0.5)" id="day-pct">0%</div>
+              <div style="font-size:7px;letter-spacing:0.3em;color:var(--text-muted);margin-top:3px">DAY ACTIVE</div>
+              <div style="font-size:8px;letter-spacing:0.1em;color:var(--text-secondary);margin-top:4px;text-align:center" id="day-remaining">— left</div>
+            </div>
           </div>
 
-          <!-- Weight -->
-          <div class="hc" onclick="navigateTo('health')">
-            <div class="hc-label">WEIGHT</div>
-            <div class="hc-val" style="color:var(--text-secondary)" id="home-weight">—</div>
-            <div class="hc-sub">lbs · log today</div>
-          </div>
-
-          <!-- Reading -->
-          <div class="hc" onclick="navigateTo('reading')">
-            <div class="hc-label">READING</div>
-            <div class="hc-val" style="font-size:18px;color:var(--pink)" id="home-read-pct">35%</div>
-            <div class="hc-sub">Atomic Habits</div>
-            <div class="hc-bar"><div class="hc-bar-fill" id="home-read-bar" style="width:35%;background:var(--pink)"></div></div>
-          </div>
-
-          <!-- Habit streak -->
-          <div class="hc" onclick="navigateTo('habits')">
-            <div class="hc-label">STREAK</div>
-            <div class="hc-val" style="color:var(--orange)" id="home-streak">4</div>
-            <div class="hc-sub">days 🔥</div>
-          </div>
-
-          <!-- Budget -->
-          <div class="hc" onclick="navigateTo('budget')">
-            <div class="hc-label">BUDGET</div>
-            <div class="hc-val" style="font-size:18px;color:var(--orange)">$<span id="home-spend">1,240</span></div>
-            <div class="hc-sub">of $2,500</div>
-            <div class="hc-bar"><div class="hc-bar-fill" id="home-budget-bar" style="width:50%;background:var(--orange)"></div></div>
+          <!-- RIGHT COLUMN -->
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div class="hc" onclick="navigateTo('health')">
+              <div class="hc-label">WEIGHT</div>
+              <div class="hc-val" style="color:var(--text-secondary)" id="home-weight">—</div>
+              <div class="hc-sub">lbs</div>
+            </div>
+            <div class="hc" onclick="navigateTo('health')">
+              <div class="hc-label">WORKOUT</div>
+              <div style="font-size:11px;font-weight:700;color:#ff4d6d;letter-spacing:0.05em;margin:4px 0;line-height:1.2" id="home-workout">Upper Body</div>
+              <div class="hc-sub">push day</div>
+            </div>
+            <div class="hc" onclick="navigateTo('budget')">
+              <div class="hc-label">BUDGET</div>
+              <div class="hc-val" style="font-size:16px;color:var(--orange)">$<span id="home-spend">1,240</span></div>
+              <div class="hc-sub">of $2,500</div>
+              <div class="hc-bar"><div class="hc-bar-fill" id="home-budget-bar" style="width:50%;background:var(--orange)"></div></div>
+            </div>
           </div>
 
         </div>
 
-        <!-- Weather strip -->
-        <div style="background:var(--card);border:1px solid var(--card-border);border-radius:4px;padding:12px 16px;display:flex;align-items:center;gap:12px;position:relative;overflow:hidden">
-          <div style="font-size:28px" id="w-icon">🌐</div>
+        <!-- WEATHER STRIP -->
+        <div style="background:var(--card);border:1px solid var(--card-border);border-radius:4px;padding:10px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0">
+          <div style="font-size:24px" id="w-icon">🌐</div>
           <div style="flex:1">
             <div style="display:flex;align-items:baseline;gap:6px">
-              <div style="font-family:Orbitron,monospace;font-size:26px;font-weight:700;color:var(--cyan)" id="w-temp">—°</div>
-              <div style="font-size:9px;letter-spacing:0.15em;color:var(--text-muted)">C · EDMONTON</div>
+              <div style="font-family:Orbitron,monospace;font-size:22px;font-weight:700;color:var(--cyan)" id="w-temp">—°</div>
+              <div style="font-size:8px;letter-spacing:0.12em;color:var(--text-muted)">C · EDMONTON</div>
             </div>
-            <div style="font-size:9px;letter-spacing:0.15em;color:var(--text-secondary);margin-top:2px" id="w-desc">Fetching...</div>
+            <div style="font-size:9px;letter-spacing:0.12em;color:var(--text-secondary);margin-top:1px" id="w-desc">Fetching...</div>
           </div>
-          <div style="display:flex;gap:16px">
+          <div style="display:flex;gap:14px">
             <div style="text-align:center">
-              <div style="font-size:8px;letter-spacing:0.12em;color:var(--text-muted)">WIND</div>
-              <div style="font-size:10px;color:var(--text-secondary);margin-top:2px" id="w-wind-home">—</div>
+              <div style="font-size:7px;letter-spacing:0.12em;color:var(--text-muted)">WIND</div>
+              <div style="font-size:9px;color:var(--text-secondary);margin-top:2px" id="w-wind-home">—</div>
             </div>
             <div style="text-align:center">
-              <div style="font-size:8px;letter-spacing:0.12em;color:var(--text-muted)">FEELS</div>
-              <div style="font-size:10px;color:var(--text-secondary);margin-top:2px" id="w-feels-home">—°</div>
+              <div style="font-size:7px;letter-spacing:0.12em;color:var(--text-muted)">FEELS</div>
+              <div style="font-size:9px;color:var(--text-secondary);margin-top:2px" id="w-feels-home">—°</div>
             </div>
           </div>
-          <!-- hidden elements kept for compatibility with fetchWeather() -->
           <span id="w-hum" style="display:none"></span>
           <span id="w-uv" style="display:none"></span>
-          
           <span id="home-todo-list" style="display:none"></span>
           <span id="home-habits" style="display:none"></span>
           <span id="home-book-title" style="display:none"></span>
@@ -2198,22 +2186,30 @@ function initDashboard() {
 
 function updateHomeRing() {
   const now = new Date();
-  const totalMins = 24 * 60;
-  const elapsed = now.getHours() * 60 + now.getMinutes();
+  // Schedule: 4:30am (270 mins) to 9:00pm (1260 mins) = 990 min day
+  const startMins = 4 * 60 + 30;   // 4:30am
+  const endMins   = 21 * 60;        // 9:00pm
+  const totalMins = endMins - startMins; // 990 mins
+  const nowMins   = now.getHours() * 60 + now.getMinutes();
+
+  let elapsed = Math.max(0, Math.min(totalMins, nowMins - startMins));
   const pct = Math.round((elapsed / totalMins) * 100);
-  const remaining = totalMins - elapsed;
-  const hrsLeft = Math.floor(remaining / 60);
+  const remaining = Math.max(0, endMins - nowMins);
+  const hrsLeft  = Math.floor(remaining / 60);
   const minsLeft = remaining % 60;
 
   const ring = document.getElementById('day-ring');
-  const circumference = 565.5;
+  const circumference = 471.2; // matches r=75 ring
   if (ring) ring.style.strokeDashoffset = circumference - (circumference * pct / 100);
 
   const pctEl = document.getElementById('day-pct');
   if (pctEl) pctEl.textContent = pct + '%';
 
   const remEl = document.getElementById('day-remaining');
-  if (remEl) remEl.textContent = hrsLeft + 'h ' + minsLeft + 'm remaining';
+  if (remEl) {
+    if (remaining <= 0) remEl.textContent = 'Rest up';
+    else remEl.textContent = hrsLeft + 'h ' + minsLeft + 'm left';
+  }
 }
 
 function updateHomeSats() {
