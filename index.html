@@ -788,7 +788,7 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
           <div style="padding:14px 16px;background:rgba(255,107,0,0.05);border:1px solid rgba(255,107,0,0.15)"><div style="font-size:8px;letter-spacing:0.2em;color:rgba(255,107,0,0.5);margin-bottom:6px">UV / SUN EXPOSURE</div><div style="font-size:15px;letter-spacing:0.08em;color:var(--text-primary)" id="w2-uv-desc">—</div><div style="font-size:9px;color:var(--text-muted);margin-top:3px" id="w2-uv-detail">—</div></div>
           <div style="padding:14px 16px;background:rgba(255,107,0,0.05);border:1px solid rgba(255,107,0,0.15)"><div style="font-size:8px;letter-spacing:0.2em;color:rgba(255,107,0,0.5);margin-bottom:6px">SUNRISE / SUNSET</div><div style="font-size:13px;letter-spacing:0.08em;color:var(--text-primary)" id="w2-sun">—</div><div style="font-size:9px;color:var(--text-muted);margin-top:3px" id="w2-daylight">—</div></div>
         </div>
-        <div class="forecast-row" id="w2-forecast"><div style="font-size:9px;color:var(--text-muted);padding:8px">Loading forecast...</div></div>
+        <div id="w2-forecast" style="display:none"></div>
       </div>
     </div>
     <!-- CARD 4: WORKOUT -->
@@ -998,7 +998,7 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
           <!-- hidden elements kept for compatibility with fetchWeather() -->
           <span id="w-hum" style="display:none"></span>
           <span id="w-uv" style="display:none"></span>
-          <span id="forecast-strip" style="display:none"></span>
+          
           <span id="home-todo-list" style="display:none"></span>
           <span id="home-habits" style="display:none"></span>
           <span id="home-book-title" style="display:none"></span>
