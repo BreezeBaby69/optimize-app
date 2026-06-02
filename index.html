@@ -465,6 +465,135 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
   .topbar-status{display:none}
 }
 
+/* ── SLEEP LOG MODAL ── */
+#sleep-modal {
+  position:fixed; inset:0; z-index:200;
+  background:rgba(1,10,15,0.92);
+  backdrop-filter:blur(8px);
+  display:flex; align-items:center; justify-content:center;
+  padding:24px;
+  opacity:0; pointer-events:none;
+  transition:opacity 0.3s ease;
+}
+#sleep-modal.visible { opacity:1; pointer-events:all; }
+.sleep-modal-box {
+  width:100%; max-width:360px;
+  background:var(--card);
+  border:1px solid var(--card-border);
+  border-top:2px solid var(--purple);
+  padding:32px 28px;
+  position:relative;
+  box-shadow:0 0 40px rgba(155,93,229,0.2);
+}
+.sleep-modal-title {
+  font-family:'Orbitron',monospace;
+  font-size:18px; font-weight:700;
+  letter-spacing:0.1em; color:var(--purple);
+  margin-bottom:4px;
+}
+.sleep-modal-sub {
+  font-size:9px; letter-spacing:0.2em;
+  color:var(--text-muted); margin-bottom:28px;
+}
+
+/* Hours buttons */
+.hours-grid {
+  display:grid; grid-template-columns:repeat(5,1fr);
+  gap:8px; margin-bottom:28px;
+}
+.hour-btn {
+  padding:10px 4px;
+  background:rgba(155,93,229,0.05);
+  border:1px solid rgba(155,93,229,0.2);
+  color:var(--text-muted);
+  font-family:'Orbitron',monospace;
+  font-size:12px; font-weight:700;
+  cursor:pointer; text-align:center;
+  border-radius:3px;
+  transition:all 0.15s;
+}
+.hour-btn:hover { background:rgba(155,93,229,0.15); color:var(--purple); }
+.hour-btn.selected {
+  background:rgba(155,93,229,0.25);
+  border-color:var(--purple);
+  color:var(--purple);
+  box-shadow:0 0 12px rgba(155,93,229,0.3);
+}
+
+/* Score drum scroll */
+.score-section { margin-bottom:28px; }
+.score-label {
+  font-size:9px; letter-spacing:0.25em;
+  color:var(--text-muted); margin-bottom:12px;
+}
+.score-display {
+  display:flex; align-items:center;
+  justify-content:center; gap:20px;
+  margin-bottom:12px;
+}
+.score-arrow {
+  width:40px; height:40px;
+  background:rgba(155,93,229,0.08);
+  border:1px solid rgba(155,93,229,0.2);
+  color:var(--purple); font-size:18px;
+  cursor:pointer; display:flex;
+  align-items:center; justify-content:center;
+  border-radius:3px; user-select:none;
+  transition:background 0.15s;
+}
+.score-arrow:hover { background:rgba(155,93,229,0.2); }
+.score-num {
+  font-family:'Orbitron',monospace;
+  font-size:52px; font-weight:900;
+  color:var(--purple);
+  text-shadow:0 0 20px rgba(155,93,229,0.5);
+  min-width:80px; text-align:center;
+  line-height:1;
+}
+.score-bar-track {
+  height:4px; background:rgba(155,93,229,0.1);
+  border-radius:2px; overflow:hidden;
+}
+.score-bar-fill {
+  height:100%; background:var(--purple);
+  box-shadow:0 0 8px rgba(155,93,229,0.5);
+  border-radius:2px;
+  transition:width 0.2s ease;
+}
+.score-quality {
+  text-align:center; font-size:9px;
+  letter-spacing:0.2em; margin-top:8px;
+  color:var(--text-muted);
+}
+
+.sleep-save-btn {
+  width:100%;
+  background:transparent;
+  border:1.5px solid var(--purple);
+  color:var(--purple);
+  font-family:'Orbitron',monospace;
+  font-size:11px; font-weight:700;
+  letter-spacing:0.25em;
+  padding:14px;
+  cursor:pointer;
+  transition:background 0.2s, color 0.2s;
+  position:relative; overflow:hidden;
+}
+.sleep-save-btn::before {
+  content:''; position:absolute; inset:0;
+  background:var(--purple);
+  transform:translateX(-101%);
+  transition:transform 0.3s ease; z-index:-1;
+}
+.sleep-save-btn:hover { color:white; }
+.sleep-save-btn:hover::before { transform:translateX(0); }
+.sleep-skip {
+  text-align:center; margin-top:12px;
+  font-size:9px; letter-spacing:0.2em;
+  color:var(--text-muted); cursor:pointer;
+}
+.sleep-skip:hover { color:var(--text-secondary); }
+
 /* ── HOME COMMAND CENTER ── */
 .hc {
   background:var(--card);
@@ -580,25 +709,63 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
         <div style="margin-top:32px;font-size:8px;letter-spacing:0.25em;color:var(--text-muted);text-align:center">SWIPE LEFT TO CONTINUE</div>
       </div>
     </div>
-    <!-- CARD 2: SLEEP -->
+    <!-- CARD 2: SLEEP LOG -->
     <div class="briefing-card" id="card-1">
       <div class="card-box accent-purple">
         <div class="card-section" style="color:rgba(155,93,229,0.7)">Sleep & Recovery // 02 of 07</div>
-        <div class="card-heading" style="color:var(--purple)">Recovery<br>Status</div>
-        <div class="sleep-score-ring">
-          <svg viewBox="0 0 160 160">
-            <circle cx="80" cy="80" r="68" fill="none" stroke="rgba(155,93,229,0.1)" stroke-width="10"/>
-            <circle cx="80" cy="80" r="68" fill="none" stroke="var(--purple)" stroke-width="10" stroke-dasharray="427" stroke-dashoffset="107" stroke-linecap="round" transform="rotate(-90 80 80)" style="filter:drop-shadow(0 0 8px rgba(155,93,229,0.6))"/>
-          </svg>
-          <div class="sleep-score-num"><div class="sleep-score-val">75</div><div class="sleep-score-label">SCORE</div></div>
+
+        <!-- LOG VIEW — shown when not yet logged today -->
+        <div id="sleep-log-view">
+          <div class="card-heading" style="color:var(--purple);font-size:clamp(22px,4vw,36px)">How did<br>you sleep?</div>
+
+          <!-- Hours buttons -->
+          <div style="font-size:8px;letter-spacing:0.25em;color:var(--text-muted);margin-bottom:10px">HOURS SLEPT</div>
+          <div id="briefing-hours-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:20px">
+            <!-- populated by JS -->
+          </div>
+
+          <!-- Score drum -->
+          <div style="font-size:8px;letter-spacing:0.25em;color:var(--text-muted);margin-bottom:10px">GARMIN SLEEP SCORE</div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:10px">
+            <button class="score-arrow" ontouchstart="startScoreHold(-1)" ontouchend="stopScoreHold()" onmousedown="startScoreHold(-1)" onmouseup="stopScoreHold()" onclick="adjustScore(-1)">−</button>
+            <div id="briefing-score-num" style="font-family:Orbitron,monospace;font-size:52px;font-weight:900;color:var(--purple);text-shadow:0 0 20px rgba(155,93,229,0.5);min-width:80px;text-align:center;line-height:1">72</div>
+            <button class="score-arrow" ontouchstart="startScoreHold(1)" ontouchend="stopScoreHold()" onmousedown="startScoreHold(1)" onmouseup="stopScoreHold()" onclick="adjustScore(1)">+</button>
+          </div>
+          <div style="height:3px;background:rgba(155,93,229,0.1);border-radius:2px;margin-bottom:6px">
+            <div id="briefing-score-bar" style="height:100%;width:72%;background:var(--purple);box-shadow:0 0 8px rgba(155,93,229,0.5);border-radius:2px;transition:width 0.15s ease"></div>
+          </div>
+          <div id="briefing-score-quality" style="text-align:center;font-size:9px;letter-spacing:0.2em;color:var(--text-muted);margin-bottom:20px">GOOD</div>
+
+          <button onclick="saveBriefingSleep()" style="width:100%;background:transparent;border:1.5px solid var(--purple);color:var(--purple);font-family:Orbitron,monospace;font-size:10px;font-weight:700;letter-spacing:0.25em;padding:13px;cursor:pointer;transition:background 0.2s,color 0.2s" onmouseover="this.style.background='rgba(155,93,229,0.2)'" onmouseout="this.style.background='transparent'">LOG SLEEP →</button>
+          <div style="text-align:center;margin-top:10px;font-size:8px;letter-spacing:0.2em;color:var(--text-muted);cursor:pointer" onclick="skipSleepLog()">Skip</div>
         </div>
-        <div style="text-align:center"><span class="sleep-quality quality-good">GOOD RECOVERY</span></div>
-        <div class="sleep-stats">
-          <div class="sleep-stat"><div class="sleep-stat-val" style="color:var(--purple)">7h 20m</div><div class="sleep-stat-label">Duration</div></div>
-          <div class="sleep-stat"><div class="sleep-stat-val" style="color:var(--purple)">1h 45m</div><div class="sleep-stat-label">Deep Sleep</div></div>
-          <div class="sleep-stat"><div class="sleep-stat-val" style="color:var(--purple)">62 bpm</div><div class="sleep-stat-label">Resting HR</div></div>
+
+        <!-- DATA VIEW — shown after logging -->
+        <div id="sleep-data-view" style="display:none">
+          <div class="card-heading" style="color:var(--purple)">Recovery<br>Status</div>
+          <div class="sleep-score-ring">
+            <svg viewBox="0 0 160 160">
+              <circle cx="80" cy="80" r="68" fill="none" stroke="rgba(155,93,229,0.1)" stroke-width="10"/>
+              <circle cx="80" cy="80" r="68" fill="none" stroke="var(--purple)" stroke-width="10"
+                stroke-dasharray="427" stroke-linecap="round"
+                transform="rotate(-90 80 80)"
+                id="sleep-ring-arc"
+                style="filter:drop-shadow(0 0 8px rgba(155,93,229,0.6));transition:stroke-dashoffset 1s ease"
+                stroke-dashoffset="107"/>
+            </svg>
+            <div class="sleep-score-num">
+              <div class="sleep-score-val" id="sleep-score-val">—</div>
+              <div class="sleep-score-label">SCORE</div>
+            </div>
+          </div>
+          <div style="text-align:center"><span class="sleep-quality quality-good" id="sleep-quality-badge">—</span></div>
+          <div class="sleep-stats" style="margin-top:16px">
+            <div class="sleep-stat"><div class="sleep-stat-val" style="color:var(--purple)" id="sleep-hours-val">—</div><div class="sleep-stat-label">Hours</div></div>
+            <div class="sleep-stat"><div class="sleep-stat-val" style="color:var(--purple)" id="sleep-score-display">—</div><div class="sleep-stat-label">Score</div></div>
+            <div class="sleep-stat"><div class="sleep-stat-val" style="color:var(--green)" id="sleep-logged-time">—</div><div class="sleep-stat-label">Logged</div></div>
+          </div>
         </div>
-        <div style="margin-top:14px;font-size:9px;letter-spacing:0.15em;color:var(--text-muted)">* Enter sleep data manually or connect a wearable in Settings</div>
+
       </div>
     </div>
     <!-- CARD 3: WEATHER -->
@@ -1103,6 +1270,37 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
   <div class="mob-nav-item" onclick="navigate('notes',this,'mob')"><span class="mob-icon">▤</span><span class="mob-label">Notes</span></div>
 </div>
 
+<!-- ═══════ SLEEP LOG MODAL ═══════ -->
+<div id="sleep-modal">
+  <div class="sleep-modal-box">
+    <div class="sleep-modal-title">Morning Log</div>
+    <div class="sleep-modal-sub">RECOVERY CHECK-IN // LOG LAST NIGHT</div>
+
+    <!-- Hours slept -->
+    <div class="score-label">HOURS SLEPT</div>
+    <div class="hours-grid" id="hours-grid">
+      <!-- populated by JS -->
+    </div>
+
+    <!-- Garmin sleep score -->
+    <div class="score-section">
+      <div class="score-label">GARMIN SLEEP SCORE</div>
+      <div class="score-display">
+        <div class="score-arrow" onclick="adjustScore(-1)">−</div>
+        <div class="score-num" id="score-num">72</div>
+        <div class="score-arrow" onclick="adjustScore(1)">+</div>
+      </div>
+      <div class="score-bar-track">
+        <div class="score-bar-fill" id="score-bar" style="width:72%"></div>
+      </div>
+      <div class="score-quality" id="score-quality">GOOD</div>
+    </div>
+
+    <button class="sleep-save-btn" onclick="saveSleepLog()">SAVE & CONTINUE →</button>
+    <div class="sleep-skip" onclick="dismissSleepModal()">Skip for today</div>
+  </div>
+</div>
+
 <script>
 // ═══ SUPABASE CONFIG ═══
 const SUPA_URL = 'https://qhwtqpgkchnblbtpoljv.supabase.co';
@@ -1369,6 +1567,7 @@ function initBriefing() {
   fetchWeatherBriefing();
   initCardPositions();
   updateDots();
+  initSleepCard();
 }
 
 function enterDashboard() {
@@ -1822,6 +2021,111 @@ renderBriefingReading();
 fetchWeatherBriefing();
 
 // ═══ DASHBOARD SCREEN ═══
+// ═══ SLEEP BRIEFING CARD ═══
+let selectedHours = null;
+let selectedScore = 72;
+let scoreHoldInterval = null;
+
+function initSleepCard() {
+  // Build hours grid
+  const grid = document.getElementById('briefing-hours-grid');
+  if (!grid) return;
+  const options = [];
+  for (let h = 4; h <= 11; h += 0.5) options.push(h);
+  grid.innerHTML = options.map(h =>
+    `<div class="hour-btn" onclick="selectHours(${h},this)">${h}</div>`
+  ).join('');
+
+  // Check if already logged today — show data view if so
+  const lastLog = localStorage.getItem('opt_sleep_logged');
+  if (lastLog === new Date().toDateString()) {
+    const cached = JSON.parse(localStorage.getItem('opt_sleep_today') || '{}');
+    if (cached.score) showSleepData(cached.hours, cached.score);
+  }
+}
+
+function selectHours(h, el) {
+  selectedHours = h;
+  document.querySelectorAll('#briefing-hours-grid .hour-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function adjustScore(delta) {
+  selectedScore = Math.max(0, Math.min(100, selectedScore + delta));
+  const num = document.getElementById('briefing-score-num');
+  const bar = document.getElementById('briefing-score-bar');
+  const qual = document.getElementById('briefing-score-quality');
+  if (num) num.textContent = selectedScore;
+  if (bar) bar.style.width = selectedScore + '%';
+  if (qual) {
+    qual.textContent = selectedScore >= 80 ? 'EXCELLENT' : selectedScore >= 65 ? 'GOOD' : selectedScore >= 50 ? 'FAIR' : 'POOR';
+  }
+}
+
+function startScoreHold(delta) {
+  adjustScore(delta);
+  scoreHoldInterval = setInterval(() => adjustScore(delta), 80);
+}
+function stopScoreHold() { clearInterval(scoreHoldInterval); }
+
+async function saveBriefingSleep() {
+  if (!selectedHours) {
+    const grid = document.getElementById('briefing-hours-grid');
+    if (grid) { grid.style.outline = '1px solid var(--red)'; setTimeout(() => grid.style.outline = '', 800); }
+    return;
+  }
+  const dateStr = new Date().toISOString().slice(0,10);
+  await supaUpsertHealth({ date: dateStr, sleep_hours: selectedHours, sleep_score: selectedScore });
+  localStorage.setItem('opt_sleep_logged', new Date().toDateString());
+  localStorage.setItem('opt_sleep_today', JSON.stringify({ hours: selectedHours, score: selectedScore }));
+  showSleepData(selectedHours, selectedScore);
+}
+
+function skipSleepLog() {
+  localStorage.setItem('opt_sleep_logged', new Date().toDateString());
+  // Show placeholder data view
+  showSleepData(null, null);
+}
+
+function showSleepData(hours, score) {
+  document.getElementById('sleep-log-view').style.display = 'none';
+  document.getElementById('sleep-data-view').style.display = 'block';
+
+  if (!score) {
+    document.getElementById('sleep-score-val').textContent = '—';
+    document.getElementById('sleep-quality-badge').textContent = 'NOT LOGGED';
+    document.getElementById('sleep-hours-val').textContent = '—';
+    document.getElementById('sleep-score-display').textContent = '—';
+    document.getElementById('sleep-logged-time').textContent = 'SKIPPED';
+    return;
+  }
+
+  // Animate ring
+  const arc = document.getElementById('sleep-ring-arc');
+  if (arc) {
+    const circumference = 427;
+    const offset = circumference - (circumference * score / 100);
+    setTimeout(() => { arc.style.strokeDashoffset = offset; }, 100);
+  }
+
+  document.getElementById('sleep-score-val').textContent = score;
+  document.getElementById('sleep-hours-val').textContent = hours + 'h';
+  document.getElementById('sleep-score-display').textContent = score;
+  const now = new Date();
+  document.getElementById('sleep-logged-time').textContent =
+    now.toLocaleTimeString('en-CA', {hour:'numeric', minute:'2-digit', hour12:true}).toUpperCase();
+
+  const badge = document.getElementById('sleep-quality-badge');
+  if (badge) {
+    if (score >= 80) { badge.className = 'sleep-quality quality-good'; badge.textContent = 'EXCELLENT RECOVERY'; }
+    else if (score >= 65) { badge.className = 'sleep-quality quality-good'; badge.textContent = 'GOOD RECOVERY'; }
+    else if (score >= 50) { badge.className = 'sleep-quality quality-fair'; badge.textContent = 'FAIR RECOVERY'; }
+    else { badge.className = 'sleep-quality quality-poor'; badge.textContent = 'POOR RECOVERY'; }
+  }
+}
+
+function initSleepModal() {} // kept for compatibility — no longer used
+
 async function loadSupabaseData() {
   try {
     // Load latest health metrics
