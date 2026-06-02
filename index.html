@@ -2282,34 +2282,36 @@ function dashTick() {
 // ── NAVIGATION ──
 let currentPage = 'home';
 function navigate(page, el, mode='desk') {
-  // hide all views
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.getElementById('view-'+page).classList.add('active');
+  // Only switch views inside the dashboard main area
+  const main = document.getElementById('main');
+  if (!main) return;
+  main.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const target = document.getElementById('view-' + page);
+  if (target) target.classList.add('active');
 
-  // sidebar active
+  // sidebar active state
   document.querySelectorAll('#sidebar .nav-item').forEach(n => n.classList.remove('active'));
-  // mobile active
   document.querySelectorAll('#mobile-nav .mob-nav-item').forEach(n => n.classList.remove('active'));
 
   if (el) {
     if (mode === 'mob') {
       el.classList.add('active');
-      // sync sidebar
       const idx = [...document.querySelectorAll('#mobile-nav .mob-nav-item')].indexOf(el);
       document.querySelectorAll('#sidebar .nav-item')[idx]?.classList.add('active');
     } else {
       el.classList.add('active');
-      // sync mobile
       const idx = [...document.querySelectorAll('#sidebar .nav-item')].indexOf(el);
       document.querySelectorAll('#mobile-nav .mob-nav-item')[idx]?.classList.add('active');
     }
   }
 
-  document.getElementById('topbar-page').textContent = page.toUpperCase();
+  const pageEl = document.getElementById('topbar-page');
+  if (pageEl) pageEl.textContent = page.toUpperCase();
   currentPage = page;
   if (page === 'habits') renderHabits();
   if (page === 'todo') renderTodos();
   if (page === 'notes') renderNotes();
+  if (page === 'health') { renderWeightLog(); initWeightWheel(); }
 }
 
 // ── TABS ──
