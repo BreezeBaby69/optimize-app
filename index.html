@@ -889,8 +889,9 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
       </nav>
       <main id="main">
         <!-- ═══════════════ HOME ═══════════════ -->
-      <div class="view active" id="view-home" style="padding:12px;height:100%;display:flex;flex-direction:column;gap:8px">
+      <div class="view active" id="view-home" style="padding:12px;">
 
+        <div style="display:flex;flex-direction:column;gap:8px;height:100%">
         <!-- GREETING -->
         <div style="text-align:center;padding:4px 0">
           <div style="font-family:Orbitron,monospace;font-size:10px;letter-spacing:0.25em;color:var(--text-muted)" id="home-date">LOADING...</div>
@@ -991,6 +992,7 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
           <span id="home-habits" style="display:none"></span>
           <span id="home-book-title" style="display:none"></span>
         </div>
+        </div><!-- end flex wrapper -->
 
       </div>
 
@@ -2285,9 +2287,15 @@ function navigate(page, el, mode='desk') {
   // Only switch views inside the dashboard main area
   const main = document.getElementById('main');
   if (!main) return;
-  main.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  main.querySelectorAll('.view').forEach(v => {
+    v.classList.remove('active');
+    v.style.display = 'none';
+  });
   const target = document.getElementById('view-' + page);
-  if (target) target.classList.add('active');
+  if (target) {
+    target.classList.add('active');
+    target.style.display = '';
+  }
 
   // sidebar active state
   document.querySelectorAll('#sidebar .nav-item').forEach(n => n.classList.remove('active'));
