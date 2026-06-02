@@ -727,17 +727,17 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
           <!-- Score drum -->
           <div style="font-size:8px;letter-spacing:0.25em;color:var(--text-muted);margin-bottom:10px">GARMIN SLEEP SCORE</div>
           <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:10px">
-            <button class="score-arrow" ontouchstart="startScoreHold(-1)" ontouchend="stopScoreHold()" onmousedown="startScoreHold(-1)" onmouseup="stopScoreHold()" onclick="adjustScore(-1)">−</button>
+            <button class="score-arrow" ontouchstart="startScoreHold(-1)" ontouchend="stopScoreHold()" onmousedown="startScoreHold(-1)" onmouseup="stopScoreHold()" onclick="event.stopPropagation();adjustScore(-1)">−</button>
             <div id="briefing-score-num" style="font-family:Orbitron,monospace;font-size:52px;font-weight:900;color:var(--purple);text-shadow:0 0 20px rgba(155,93,229,0.5);min-width:80px;text-align:center;line-height:1">72</div>
-            <button class="score-arrow" ontouchstart="startScoreHold(1)" ontouchend="stopScoreHold()" onmousedown="startScoreHold(1)" onmouseup="stopScoreHold()" onclick="adjustScore(1)">+</button>
+            <button class="score-arrow" ontouchstart="startScoreHold(1)" ontouchend="stopScoreHold()" onmousedown="startScoreHold(1)" onmouseup="stopScoreHold()" onclick="event.stopPropagation();adjustScore(1)">+</button>
           </div>
           <div style="height:3px;background:rgba(155,93,229,0.1);border-radius:2px;margin-bottom:6px">
             <div id="briefing-score-bar" style="height:100%;width:72%;background:var(--purple);box-shadow:0 0 8px rgba(155,93,229,0.5);border-radius:2px;transition:width 0.15s ease"></div>
           </div>
           <div id="briefing-score-quality" style="text-align:center;font-size:9px;letter-spacing:0.2em;color:var(--text-muted);margin-bottom:20px">GOOD</div>
 
-          <button onclick="saveBriefingSleep()" style="width:100%;background:transparent;border:1.5px solid var(--purple);color:var(--purple);font-family:Orbitron,monospace;font-size:10px;font-weight:700;letter-spacing:0.25em;padding:13px;cursor:pointer;transition:background 0.2s,color 0.2s" onmouseover="this.style.background='rgba(155,93,229,0.2)'" onmouseout="this.style.background='transparent'">LOG SLEEP →</button>
-          <div style="text-align:center;margin-top:10px;font-size:8px;letter-spacing:0.2em;color:var(--text-muted);cursor:pointer" onclick="skipSleepLog()">Skip</div>
+          <button onclick="event.stopPropagation();saveBriefingSleep()" style="width:100%;background:transparent;border:1.5px solid var(--purple);color:var(--purple);font-family:Orbitron,monospace;font-size:10px;font-weight:700;letter-spacing:0.25em;padding:13px;cursor:pointer;transition:background 0.2s,color 0.2s" onmouseover="this.style.background='rgba(155,93,229,0.2)'" onmouseout="this.style.background='transparent'">LOG SLEEP →</button>
+          <div style="text-align:center;margin-top:10px;font-size:8px;letter-spacing:0.2em;color:var(--text-muted);cursor:pointer" onclick="event.stopPropagation();skipSleepLog()">Skip</div>
         </div>
 
         <!-- DATA VIEW — shown after logging -->
@@ -1286,9 +1286,9 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
     <div class="score-section">
       <div class="score-label">GARMIN SLEEP SCORE</div>
       <div class="score-display">
-        <div class="score-arrow" onclick="adjustScore(-1)">−</div>
+        <div class="score-arrow" onclick="event.stopPropagation();adjustScore(-1)">−</div>
         <div class="score-num" id="score-num">72</div>
-        <div class="score-arrow" onclick="adjustScore(1)">+</div>
+        <div class="score-arrow" onclick="event.stopPropagation();adjustScore(1)">+</div>
       </div>
       <div class="score-bar-track">
         <div class="score-bar-fill" id="score-bar" style="width:72%"></div>
@@ -1747,8 +1747,10 @@ document.addEventListener('touchmove', e => {
   }
 }, {passive:true});
 
-document.addEventListener('touchend', () => {
+document.addEventListener('touchend', e => {
   if (isAnimating || touchLocked !== 'h') return;
+  // If the touch ended on an interactive sleep element, don't navigate
+  if (e.target.closest && e.target.closest('#sleep-log-view')) return;
 
   const W      = window.innerWidth;
   const commit = Math.abs(touchDragX) > W * 0.28 || Math.abs(touchVel) > 0.45;
@@ -1999,8 +2001,14 @@ function loadVerse() {
 
 // ── CLICK/TAP TO ADVANCE ──
 function handleCardClick(e) {
-  if (e.target.closest('.enter-dash-btn') || e.target.closest('#skip-btn')) return;
+  // Never advance on mobile touch — swipe only
   if (window.matchMedia('(hover:none)').matches) return;
+  // Don't advance if tapping interactive elements
+  if (e.target.closest('.enter-dash-btn')) return;
+  if (e.target.closest('#skip-btn')) return;
+  if (e.target.closest('#sleep-log-view')) return;
+  if (e.target.closest('.hour-btn')) return;
+  if (e.target.closest('.score-arrow')) return;
   if (current < TOTAL - 1) nextCard();
   else enterDashboard();
 }
@@ -2033,7 +2041,7 @@ function initSleepCard() {
   const options = [];
   for (let h = 4; h <= 11; h += 0.5) options.push(h);
   grid.innerHTML = options.map(h =>
-    `<div class="hour-btn" onclick="selectHours(${h},this)">${h}</div>`
+    `<div class="hour-btn" onclick="event.stopPropagation();selectHours(${h},this)">${h}</div>`
   ).join('');
 
   // Check if already logged today — show data view if so
