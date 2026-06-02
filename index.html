@@ -374,7 +374,40 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
 .btn.green-btn:hover{background:var(--green);color:var(--bg)}
 .priority-select{background:rgba(0,245,255,0.04);border:1px solid var(--card-border);color:var(--text-secondary);font-family:'Share Tech Mono',monospace;font-size:10px;padding:10px 8px;border-radius:3px;outline:none;cursor:pointer}
 .todo-list{display:flex;flex-direction:column;gap:6px}
-.todo-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(0,245,255,0.03);border:1px solid var(--card-border);border-radius:3px;transition:background .2s,border-color .2s}
+.todo-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(0,245,255,0.03);border:1px solid var(--card-border);border-radius:3px;transition:background .3s,border-color .3s,opacity .4s,transform .3s}
+/* Checkoff ripple */
+@keyframes checkRipple {
+  0%   { transform:scale(0.8); opacity:1; }
+  100% { transform:scale(2.8); opacity:0; }
+}
+@keyframes checkPop {
+  0%   { transform:scale(1); }
+  30%  { transform:scale(1.35); }
+  60%  { transform:scale(0.9); }
+  100% { transform:scale(1); }
+}
+@keyframes strikeSlide {
+  from { width:0 }
+  to   { width:100% }
+}
+@keyframes itemFade {
+  0%   { opacity:1; transform:translateX(0); }
+  100% { opacity:0.35; transform:translateX(4px); }
+}
+.todo-check.popping { animation:checkPop 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+.todo-ripple {
+  position:absolute;
+  width:16px; height:16px;
+  border-radius:50%;
+  border:2px solid var(--cyan);
+  pointer-events:none;
+  animation:checkRipple 0.5s ease-out forwards;
+}
+.todo-check-wrap {
+  position:relative;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
 .todo-item:hover{background:rgba(0,245,255,0.06);border-color:rgba(0,245,255,0.2)}
 .todo-item.done{opacity:.4}
 .todo-item.done .todo-text{text-decoration:line-through}
@@ -2350,7 +2383,58 @@ function addTodo() {
 
 function toggleTodo(id) {
   const t = todos.find(t => t.id === id);
-  if (t) { t.done = !t.done; saveTodos(); renderTodos(); }
+  if (!t) return;
+
+  const chk = document.getElementById('chk-' + id);
+  const item = document.getElementById('todo-item-' + id);
+  const wrap = chk?.closest('.todo-check-wrap');
+
+  if (!t.done) {
+    // Checking ON — animate first, then save
+    if (chk) {
+      // Pop the checkbox
+      chk.classList.add('popping');
+      chk.classList.add('checked');
+      chk.innerHTML = '<span style="font-size:10px;color:var(--bg);font-weight:700">✓</span>';
+      chk.addEventListener('animationend', () => chk.classList.remove('popping'), {once:true});
+
+      // Ripple rings
+      if (wrap) {
+        for (let i = 0; i < 2; i++) {
+          setTimeout(() => {
+            const ripple = document.createElement('div');
+            ripple.className = 'todo-ripple';
+            wrap.appendChild(ripple);
+            ripple.addEventListener('animationend', () => ripple.remove());
+          }, i * 120);
+        }
+      }
+    }
+
+    // Flash the row green briefly
+    if (item) {
+      item.style.background = 'rgba(0,255,136,0.08)';
+      item.style.borderColor = 'rgba(0,255,136,0.3)';
+      setTimeout(() => {
+        item.style.background = '';
+        item.style.borderColor = '';
+        item.style.transition = 'background .3s,border-color .3s,opacity .4s';
+      }, 400);
+    }
+
+    // Delay actual state change so animation plays first
+    setTimeout(() => {
+      t.done = true;
+      saveTodos();
+      renderTodos();
+    }, 500);
+
+  } else {
+    // Unchecking — instant
+    t.done = false;
+    saveTodos();
+    renderTodos();
+  }
 }
 
 function deleteTodo(id) {
@@ -2369,8 +2453,10 @@ function renderTodos() {
     return;
   }
   list.innerHTML = filtered.map(t => `
-    <div class="todo-item ${t.done?'done':''}">
-      <div class="todo-check ${t.done?'checked':''}" onclick="toggleTodo(${t.id})"></div>
+    <div class="todo-item ${t.done?'done':''}" id="todo-item-${t.id}">
+      <div class="todo-check-wrap">
+        <div class="todo-check ${t.done?'checked':''}" id="chk-${t.id}" onclick="toggleTodo(${t.id})"></div>
+      </div>
       <span class="todo-text">${t.text}</span>
       <span class="priority-tag ${t.priority}">${t.priority.toUpperCase()}</span>
       <span class="todo-del" onclick="deleteTodo(${t.id})">✕</span>
