@@ -1581,11 +1581,15 @@ function enterDashboard() {
   const screen = document.getElementById('screen-briefing');
   screen.style.transition = 'opacity 0.4s ease';
   screen.style.opacity = '0';
+  // Ensure body is fully visible
+  document.body.style.opacity = '1';
+  document.body.style.transition = '';
   setTimeout(() => {
     screen.style.display = 'none';
+    screen.style.opacity = '';
     showScreen('screen-dashboard');
     initDashboard();
-  }, 400);
+  }, 420);
 }
 
 // cursor handled globally above
@@ -1785,20 +1789,7 @@ document.addEventListener('touchend', e => {
 }, {passive:true});
 
 
-function enterDashboard() {
-  // Mark briefing as seen today
-  localStorage.setItem('opt_briefing_date', new Date().toDateString());
-  // Sync any habit changes back
-  syncHabitsBack();
-  isAnimating = true;
-  document.body.style.transition = 'opacity 0.4s ease';
-  document.body.style.opacity = '0';
-  setTimeout(() => {
-    document.getElementById('screen-briefing').style.display = 'none';
-    showScreen('screen-dashboard');
-    initDashboard();
-  }, 420);
-}
+// enterDashboard defined above
 
 // Keyboard nav
 document.addEventListener('keydown', e => {
