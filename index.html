@@ -1057,22 +1057,71 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
       </div>
 
       <!-- ═══════════════ BUDGET ═══════════════ -->
-      <div class="view" id="view-budget" style="padding:0;height:100%;display:flex;flex-direction:column;">
-        <!-- Thin header bar -->
-        <div style="padding:12px 20px;border-bottom:1px solid var(--card-border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:rgba(3,15,24,0.8)">
+      <div class="view" id="view-budget" style="padding:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
           <div>
-            <div style="font-family:Orbitron,monospace;font-size:14px;font-weight:700;letter-spacing:0.15em;color:var(--cyan)">LEDGER</div>
-            <div style="font-size:8px;letter-spacing:0.25em;color:var(--text-muted)">BUDGET & FINANCE // LIVE DATA</div>
+            <div class="page-title">BUDGET</div>
+            <div class="page-sub">LIVE DATA FROM LEDGER</div>
           </div>
-          <a href="https://ledger-theta-red.vercel.app/" target="_blank" style="font-size:8px;letter-spacing:0.2em;color:var(--text-muted);text-decoration:none;border:1px solid var(--card-border);padding:5px 10px;transition:color .2s,border-color .2s" onmouseover="this.style.color='var(--cyan)';this.style.borderColor='var(--cyan)'" onmouseout="this.style.color='var(--text-muted)';this.style.borderColor='var(--card-border)'">OPEN FULL ↗</a>
+          <a href="https://ledger-theta-red.vercel.app/" target="_blank" class="btn sm" style="text-decoration:none">OPEN LEDGER ↗</a>
         </div>
-        <!-- Ledger iframe -->
-        <iframe
-          src="https://ledger-theta-red.vercel.app/"
-          style="flex:1;border:none;width:100%;background:var(--bg)"
-          allow="fullscreen"
-          title="Ledger Budget App">
-        </iframe>
+
+        <!-- Summary stat row -->
+        <div class="grid-4" style="margin-bottom:16px">
+          <div class="card">
+            <div class="card-title">Total Spent</div>
+            <div class="stat-val orange" id="b-total-spent">—</div>
+            <div class="stat-delta" id="b-period">this month</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Budget Remaining</div>
+            <div class="stat-val green" id="b-remaining">—</div>
+            <div class="stat-delta" id="b-budget-total">of — budgeted</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Transactions</div>
+            <div class="stat-val" id="b-tx-count">—</div>
+            <div class="stat-delta">this month</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Largest Expense</div>
+            <div class="stat-val red" id="b-largest">—</div>
+            <div class="stat-delta" id="b-largest-cat">—</div>
+          </div>
+        </div>
+
+        <!-- Category breakdown + Recent transactions -->
+        <div class="grid-2">
+          <!-- Category spending -->
+          <div class="card">
+            <div class="card-title">Spending by Category</div>
+            <div id="b-categories">
+              <div style="text-align:center;padding:24px;font-size:9px;letter-spacing:0.2em;color:var(--text-muted)">LOADING...</div>
+            </div>
+          </div>
+
+          <!-- Budget limits progress -->
+          <div class="card">
+            <div class="card-title">Budget Limits</div>
+            <div id="b-budgets">
+              <div style="text-align:center;padding:24px;font-size:9px;letter-spacing:0.2em;color:var(--text-muted)">LOADING...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent transactions -->
+        <div class="card" style="margin-top:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div class="card-title" style="margin-bottom:0">Recent Transactions</div>
+            <a href="https://ledger-theta-red.vercel.app/" target="_blank" style="font-size:8px;letter-spacing:0.15em;color:var(--text-muted);text-decoration:none">VIEW ALL ↗</a>
+          </div>
+          <table class="log-table" id="b-transactions">
+            <thead><tr><th>Date</th><th>Description</th><th>Category</th><th style="text-align:right">Amount</th></tr></thead>
+            <tbody id="b-tx-body">
+              <tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;letter-spacing:0.15em">LOADING...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <!-- ═══════════════ HEALTH ═══════════════ -->
@@ -1303,8 +1352,160 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
 
 <script>
 // ═══ SUPABASE CONFIG ═══
+// OPTIMIZE Supabase (health, weight)
 const SUPA_URL = 'https://qhwtqpgkchnblbtpoljv.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFod3RxcGdrY2huYmxidHBvbGp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MzQ3NDksImV4cCI6MjA5NTMxMDc0OX0.EBgGbKXd-sk6zgpuwb_MKE_nb3TtGeR0YfcW4V3WlF8';
+
+// LEDGER Supabase (budget, transactions)
+const LEDGER_URL = 'https://osqjbzzbdcmcgwsyjsrj.supabase.co';
+const LEDGER_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9zcWpienpiZGNtY2d3c3lqc3JqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMjA4ODcsImV4cCI6MjA5NDg5Njg4N30.KHjmcv_8dcV870XrCCQCH5Agu1ozyKqOSvPXLJ7GnI8';
+
+async function ledgerFetch(table, query='') {
+  const url = LEDGER_URL + '/rest/v1/' + table + query;
+  const r = await fetch(url, {
+    headers: {
+      'apikey': LEDGER_KEY,
+      'Authorization': 'Bearer ' + LEDGER_KEY,
+      'Content-Type': 'application/json'
+    }
+  });
+  if (!r.ok) return null;
+  return r.json();
+}
+
+async function loadBudgetData() {
+  try {
+    // Get current month range
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth()+1, 0).toISOString().slice(0,10);
+
+    // Fetch transactions, categories, budgets in parallel
+    const [txRaw, cats, budgets] = await Promise.all([
+      ledgerFetch('transactions', `?date=gte.${monthStart}&date=lte.${monthEnd}&order=date.desc`),
+      ledgerFetch('categories', '?order=name.asc'),
+      ledgerFetch('budgets', '')
+    ]);
+
+    if (!txRaw) return;
+
+    const transactions = txRaw.filter(t => t.amount < 0); // expenses only
+    const income = txRaw.filter(t => t.amount > 0);
+
+    // Build category lookup
+    const catMap = {};
+    if (cats) cats.forEach(cat => { catMap[cat.id] = cat; });
+
+    // Build budget lookup
+    const budgetMap = {};
+    if (budgets) budgets.forEach(b => { budgetMap[b.category_id] = b; });
+
+    // Total spent this month
+    const totalSpent = transactions.reduce((s, t) => s + Math.abs(t.amount), 0);
+    const totalBudgeted = budgets ? budgets.reduce((s, b) => s + (b.amount || 0), 0) : 0;
+    const remaining = totalBudgeted - totalSpent;
+
+    // Largest expense
+    const largest = transactions.reduce((m, t) => Math.abs(t.amount) > Math.abs(m.amount||0) ? t : m, {});
+
+    // Update summary stats
+    const fmt = n => '$' + Math.abs(n).toLocaleString('en-CA', {minimumFractionDigits:2, maximumFractionDigits:2});
+    const el = id => document.getElementById(id);
+    if(el('b-total-spent')) el('b-total-spent').textContent = fmt(totalSpent);
+    if(el('b-remaining')) {
+      el('b-remaining').textContent = fmt(remaining);
+      el('b-remaining').className = 'stat-val ' + (remaining >= 0 ? 'green' : 'red');
+    }
+    if(el('b-tx-count')) el('b-tx-count').textContent = transactions.length;
+    if(el('b-budget-total')) el('b-budget-total').textContent = 'of ' + fmt(totalBudgeted) + ' budgeted';
+    if(el('b-largest')) el('b-largest').textContent = largest.amount ? fmt(largest.amount) : '—';
+    if(el('b-largest-cat')) {
+      const cat = catMap[largest.category_id];
+      el('b-largest-cat').textContent = cat ? cat.name : (largest.description || '—');
+    }
+
+    // Update home budget tile
+    const homeSpend = el('home-spend');
+    if(homeSpend) homeSpend.textContent = totalSpent.toLocaleString('en-CA', {maximumFractionDigits:0});
+    const budgetBar = el('home-budget-bar');
+    if(budgetBar && totalBudgeted > 0) budgetBar.style.width = Math.min(100, Math.round((totalSpent/totalBudgeted)*100)) + '%';
+
+    // Category breakdown
+    const catSpend = {};
+    transactions.forEach(t => {
+      const key = t.category_id || 'uncategorized';
+      catSpend[key] = (catSpend[key] || 0) + Math.abs(t.amount);
+    });
+
+    const catEl = el('b-categories');
+    if (catEl) {
+      const sorted = Object.entries(catSpend).sort((a,b) => b[1]-a[1]).slice(0,8);
+      const maxSpend = sorted[0]?.[1] || 1;
+      const colors = ['#00f5ff','#ff6b00','#00ff88','#9b5de5','#f72585','#ffd700','#3b8bd4','#ff3b5c'];
+      catEl.innerHTML = sorted.map(([catId, amt], i) => {
+        const cat = catMap[catId];
+        const name = cat ? cat.name : 'Other';
+        const color = cat?.color || colors[i % colors.length];
+        const pct = Math.round((amt / maxSpend) * 100);
+        return `<div style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span style="font-size:10px;letter-spacing:0.1em;color:var(--text-secondary)">${name}</span>
+            <span style="font-family:Orbitron,monospace;font-size:10px;color:var(--text-primary)">${fmt(amt)}</span>
+          </div>
+          <div style="height:3px;background:rgba(0,245,255,0.08);border-radius:2px">
+            <div style="height:100%;width:${pct}%;background:${color};box-shadow:0 0 6px ${color};border-radius:2px;transition:width .6s ease"></div>
+          </div>
+        </div>`;
+      }).join('') || '<div style="color:var(--text-muted);font-size:9px;letter-spacing:0.15em;text-align:center;padding:16px">NO TRANSACTIONS THIS MONTH</div>';
+    }
+
+    // Budget limits
+    const budgetEl = el('b-budgets');
+    if (budgetEl && budgets && budgets.length > 0) {
+      budgetEl.innerHTML = budgets.map(b => {
+        const cat = catMap[b.category_id];
+        const name = cat ? cat.name : 'Unknown';
+        const spent = catSpend[b.category_id] || 0;
+        const limit = b.amount || 1;
+        const pct = Math.min(100, Math.round((spent/limit)*100));
+        const color = pct >= 90 ? 'var(--red)' : pct >= 70 ? 'var(--orange)' : 'var(--green)';
+        return `<div style="margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span style="font-size:10px;letter-spacing:0.1em;color:var(--text-secondary)">${name}</span>
+            <span style="font-size:9px;color:${color};font-family:Orbitron,monospace">${fmt(spent)} / ${fmt(limit)}</span>
+          </div>
+          <div style="height:3px;background:rgba(0,245,255,0.08);border-radius:2px">
+            <div style="height:100%;width:${pct}%;background:${color};box-shadow:0 0 6px ${color};border-radius:2px;transition:width .6s ease"></div>
+          </div>
+          <div style="font-size:8px;letter-spacing:0.12em;color:var(--text-muted);margin-top:2px">${pct}% used</div>
+        </div>`;
+      }).join('');
+    } else if (budgetEl) {
+      budgetEl.innerHTML = '<div style="color:var(--text-muted);font-size:9px;letter-spacing:0.15em;text-align:center;padding:16px">NO BUDGET LIMITS SET</div>';
+    }
+
+    // Recent transactions table
+    const tbody = el('b-tx-body');
+    if (tbody) {
+      const recent = txRaw.slice(0, 12);
+      tbody.innerHTML = recent.map(t => {
+        const cat = catMap[t.category_id];
+        const isExpense = t.amount < 0;
+        const color = isExpense ? 'var(--red)' : 'var(--green)';
+        const sign = isExpense ? '-' : '+';
+        return `<tr>
+          <td>${t.date || '—'}</td>
+          <td>${t.description || t.name || '—'}</td>
+          <td style="color:var(--text-muted)">${cat ? cat.name : '—'}</td>
+          <td style="text-align:right;color:${color};font-family:Orbitron,monospace">${sign}${Math.abs(t.amount).toFixed(2)}</td>
+        </tr>`;
+      }).join('');
+    }
+
+  } catch(e) {
+    console.log('Ledger load error:', e);
+  }
+}
 
 async function supaFetch(table, method='GET', body=null, query='') {
   const url = SUPA_URL + '/rest/v1/' + table + query;
@@ -2183,6 +2384,7 @@ function initDashboard() {
   updateHomeSats();
   dashTick();
   loadSupabaseData();
+  loadBudgetData();
   setInterval(dashTick, 1000);
   setInterval(updateHomeRing, 60000);
   setInterval(fetchWeather, 60 * 60 * 1000);
@@ -2306,6 +2508,7 @@ function navigate(page, el, mode='desk') {
   if (page === 'todo') renderTodos();
   if (page === 'notes') renderNotes();
   if (page === 'health') { renderWeightLog(); initWeightWheel(); }
+  if (page === 'budget') loadBudgetData();
 }
 
 // ── TABS ──
