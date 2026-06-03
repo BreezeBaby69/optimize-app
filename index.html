@@ -828,16 +828,9 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
     <div class="briefing-card" id="card-3">
       <div class="card-box accent-coral">
         <div class="card-section" style="color:rgba(255,77,109,0.7)">Today's Training // 04 of 07</div>
-        <div class="card-heading" style="color:#ff4d6d">Upper<br>Body</div>
-        <div class="workout-type-badge" style="background:rgba(255,77,109,0.1);color:#ff4d6d;border:1px solid rgba(255,77,109,0.25)">STRENGTH // PUSH DAY</div>
-        <div class="workout-exercises">
-          <div class="workout-ex"><span class="workout-ex-num">01</span><span class="workout-ex-name">Bench Press</span><span class="workout-ex-sets">4 × 6–8</span></div>
-          <div class="workout-ex"><span class="workout-ex-num">02</span><span class="workout-ex-name">Incline Dumbbell Press</span><span class="workout-ex-sets">3 × 10</span></div>
-          <div class="workout-ex"><span class="workout-ex-num">03</span><span class="workout-ex-name">Lateral Raises</span><span class="workout-ex-sets">4 × 15</span></div>
-          <div class="workout-ex"><span class="workout-ex-num">04</span><span class="workout-ex-name">Tricep Pushdowns</span><span class="workout-ex-sets">3 × 12</span></div>
-          <div class="workout-ex"><span class="workout-ex-num">05</span><span class="workout-ex-name">Face Pulls (shoulder health)</span><span class="workout-ex-sets">3 × 15</span></div>
+        <div id="brief-workout-content">
+          <div class="card-heading" style="color:#ff4d6d">Loading...</div>
         </div>
-        <div class="workout-rest">⚠ Avoid overhead pressing — shoulder instability protocol active</div>
       </div>
     </div>
     <!-- CARD 5: TASKS -->
@@ -1807,6 +1800,99 @@ function enterSystem() {
 }
 
 // ═══ BRIEFING SCREEN ═══
+async function loadBriefingWorkout() {
+  const el = document.getElementById('brief-workout-content');
+  if(!el) return;
+  const today = new Date().toISOString().slice(0,10);
+  const dayOfWeek = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][new Date().getDay()];
+
+  try {
+    // Check for a manual day session first
+    const sessions = await supaFetch('day_sessions', 'GET', null,
+      '?date=eq.' + today + '&order=created_at.desc&limit=1');
+    let dayId = null, progId = null, dayName = '', progName = '';
+
+    if(sessions && sessions.length > 0) {
+      dayId = sessions[0].program_day_id;
+      progId = sessions[0].program_id;
+      const [days, progs] = await Promise.all([
+        supaFetch('program_days','GET',null,'?id=eq.'+dayId),
+        supaFetch('programs','GET',null,'?id=eq.'+progId)
+      ]);
+      dayName = days?.[0]?.name || '';
+      progName = progs?.[0]?.name || '';
+    } else {
+      // Check active program schedule
+      const progs = await supaFetch('programs','GET',null,'?is_active=eq.true&limit=1');
+      const prog = progs?.[0];
+      if(prog?.weekly_schedule) {
+        const dayNum = Object.entries(prog.weekly_schedule).find(([,w])=>w===dayOfWeek)?.[0];
+        if(dayNum) {
+          const days = await supaFetch('program_days','GET',null,'?program_id=eq.'+prog.id+'&day_number=eq.'+dayNum);
+          if(days?.[0]) { dayId=days[0].id; progId=prog.id; dayName=days[0].name; progName=prog.name; }
+        }
+      }
+    }
+
+    if(!dayId) {
+      el.innerHTML = `
+        <div class="card-heading" style="color:#ff4d6d">Rest<br>Day</div>
+        <div class="workout-type-badge" style="background:rgba(255,77,109,0.1);color:#ff4d6d;border:1px solid rgba(255,77,109,0.25)">RECOVERY</div>
+        <div style="font-size:10px;color:rgba(255,77,109,0.5);margin-top:16px;letter-spacing:0.12em">No workout scheduled today</div>`;
+      // Update home workout tile
+      const hw = document.getElementById('home-workout');
+      if(hw) hw.textContent = 'Rest Day';
+      return;
+    }
+
+    // Load exercises for this day
+    const progExes = await supaFetch('program_exercises','GET',null,'?program_day_id=eq.'+dayId+'&order=order_index.asc');
+    if(!progExes?.length) {
+      el.innerHTML = `<div class="card-heading" style="color:#ff4d6d">${dayName}</div><div style="font-size:9px;color:rgba(255,77,109,0.4);margin-top:12px;letter-spacing:.15em">NO EXERCISES IN THIS DAY</div>`;
+      return;
+    }
+
+    const exIds = [...new Set(progExes.map(e=>e.exercise_id))];
+    const exList = await supaFetch('exercises','GET',null,'?id=in.('+exIds.join(',')+')');
+    const exMap = {};
+    exList?.forEach(e=>exMap[e.id]=e);
+
+    // Sort by superset then order
+    const sorted = [...progExes].sort((a,b)=>{
+      const sa=a.superset_group||'ZZZ', sb=b.superset_group||'ZZZ';
+      return sa!==sb ? sa.localeCompare(sb) : (a.order_index||0)-(b.order_index||0);
+    });
+
+    // Build heading from day name
+    const words = dayName.split(' ');
+    const heading = words.length >= 2 ? words[0]+'<br>'+words.slice(1).join(' ') : dayName;
+
+    el.innerHTML = `
+      <div class="card-heading" style="color:#ff4d6d">${heading}</div>
+      <div class="workout-type-badge" style="background:rgba(255,77,109,0.1);color:#ff4d6d;border:1px solid rgba(255,77,109,0.25)">${progName.toUpperCase()}</div>
+      <div class="workout-exercises">
+        ${sorted.slice(0,6).map((pe,i)=>{
+          const ex = exMap[pe.exercise_id]||{};
+          const ss = pe.superset_group;
+          return `<div class="workout-ex">
+            <span class="workout-ex-num">${ss||String(i+1).padStart(2,'0')}</span>
+            <span class="workout-ex-name">${ex.name||'—'}</span>
+            <span class="workout-ex-sets">${pe.sets||3}×${pe.reps||10}</span>
+          </div>`;
+        }).join('')}
+        ${sorted.length>6?`<div style="font-size:9px;color:rgba(255,77,109,0.4);margin-top:8px;letter-spacing:.15em">+${sorted.length-6} more exercises</div>`:''}
+      </div>`;
+
+    // Update home workout tile
+    const hw = document.getElementById('home-workout');
+    if(hw) hw.textContent = dayName;
+
+  } catch(e) {
+    el.innerHTML = `<div class="card-heading" style="color:#ff4d6d">Workout</div><div style="font-size:9px;color:rgba(255,77,109,0.4);margin-top:12px;letter-spacing:.15em">UNABLE TO LOAD</div>`;
+    console.log('Briefing workout error:', e);
+  }
+}
+
 function initBriefing() {
   loadVerse();
   renderBriefingTasks();
@@ -1816,6 +1902,7 @@ function initBriefing() {
   initCardPositions();
   updateDots();
   initSleepCard();
+  loadBriefingWorkout();
 }
 
 function enterDashboard() {
