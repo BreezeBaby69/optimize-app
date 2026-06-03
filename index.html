@@ -1079,22 +1079,22 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
           <div class="card">
             <div class="card-title">Total Spent</div>
             <div class="stat-val orange" id="b-total-spent">—</div>
-            <div class="stat-delta" id="b-period">this month</div>
+            <div class="stat-delta">this month</div>
           </div>
           <div class="card">
-            <div class="card-title">Budget Remaining</div>
-            <div class="stat-val green" id="b-remaining">—</div>
-            <div class="stat-delta" id="b-budget-total">of — budgeted</div>
+            <div class="card-title">Total Income</div>
+            <div class="stat-val green" id="b-total-income">—</div>
+            <div class="stat-delta">this month</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Net This Month</div>
+            <div class="stat-val" id="b-net">—</div>
+            <div class="stat-delta" id="b-net-label">income − expenses</div>
           </div>
           <div class="card">
             <div class="card-title">Transactions</div>
             <div class="stat-val" id="b-tx-count">—</div>
             <div class="stat-delta">this month</div>
-          </div>
-          <div class="card">
-            <div class="card-title">Largest Expense</div>
-            <div class="stat-val red" id="b-largest">—</div>
-            <div class="stat-delta" id="b-largest-cat">—</div>
           </div>
         </div>
 
@@ -1434,29 +1434,22 @@ async function loadBudgetData() {
     const budgetMap = {};
     if (budgets) budgets.forEach(b => { budgetMap[b.category_id] = b; });
 
-    // Total spent this month
-    const totalSpent = transactions.reduce((s, t) => s + Math.abs(t.amount), 0);
-    const totalBudgeted = budgets ? budgets.reduce((s, b) => s + (b.amount || 0), 0) : 0;
-    const remaining = totalBudgeted - totalSpent;
-
-    // Largest expense
-    const largest = transactions.reduce((m, t) => Math.abs(t.amount) > Math.abs(m.amount||0) ? t : m, {});
+    // Totals
+    const totalSpent  = transactions.reduce((s, t) => s + Math.abs(t.amount), 0);
+    const totalIncome = income.reduce((s, t) => s + Math.abs(t.amount), 0);
+    const net = totalIncome - totalSpent;
 
     // Update summary stats
     const fmt = n => '$' + Math.abs(n).toLocaleString('en-CA', {minimumFractionDigits:2, maximumFractionDigits:2});
     const el = id => document.getElementById(id);
-    if(el('b-total-spent')) el('b-total-spent').textContent = fmt(totalSpent);
-    if(el('b-remaining')) {
-      el('b-remaining').textContent = fmt(remaining);
-      el('b-remaining').className = 'stat-val ' + (remaining >= 0 ? 'green' : 'red');
+    if(el('b-total-spent'))  el('b-total-spent').textContent  = fmt(totalSpent);
+    if(el('b-total-income')) el('b-total-income').textContent = fmt(totalIncome);
+    if(el('b-net')) {
+      el('b-net').textContent  = (net >= 0 ? '+' : '-') + fmt(net);
+      el('b-net').className    = 'stat-val ' + (net >= 0 ? 'green' : 'red');
     }
-    if(el('b-tx-count')) el('b-tx-count').textContent = transactions.length;
-    if(el('b-budget-total')) el('b-budget-total').textContent = 'of ' + fmt(totalBudgeted) + ' budgeted';
-    if(el('b-largest')) el('b-largest').textContent = largest.amount ? fmt(largest.amount) : '—';
-    if(el('b-largest-cat')) {
-      const cat = catMap[largest.category_id];
-      el('b-largest-cat').textContent = cat ? cat.name : (largest.description || '—');
-    }
+    if(el('b-net-label')) el('b-net-label').textContent = net >= 0 ? '▲ surplus' : '▼ deficit';
+    if(el('b-tx-count'))  el('b-tx-count').textContent  = txRaw.length;
 
     // Update home budget tile
     const homeSpend = el('home-spend');
