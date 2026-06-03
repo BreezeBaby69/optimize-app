@@ -1140,7 +1140,7 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
       </div>
 
       <!-- ═══════════════ HEALTH ═══════════════ -->
-      <div class="view" id="view-health" style="padding:0;height:100%;display:flex;flex-direction:column;">
+      <div class="view" id="view-health" style="padding:0;position:absolute;inset:0;display:flex;flex-direction:column;">
         <div style="padding:12px 20px;border-bottom:1px solid var(--card-border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:rgba(3,15,24,0.8)">
           <div>
             <div style="font-family:Orbitron,monospace;font-size:14px;font-weight:700;letter-spacing:0.15em;color:var(--cyan)">OPTIMIZE // TRAIN</div>
@@ -2564,7 +2564,10 @@ function navigate(page, el, mode='desk') {
   const target = document.getElementById('view-' + page);
   if (target) {
     target.classList.add('active');
-    target.style.display = '';
+    // iframe views need flex, others use block
+    const iframeViews = ['health','budget'];
+    target.style.display = iframeViews.includes(page) ? 'flex' : 'block';
+    target.style.flexDirection = iframeViews.includes(page) ? 'column' : '';
   }
 
   // sidebar active state
