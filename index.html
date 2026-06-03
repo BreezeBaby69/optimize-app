@@ -880,7 +880,7 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
     </div>
   </div>
   <div id="progress-dots"></div>
-  <button id="skip-btn" onclick="enterDashboard()">SKIP BRIEFING ↗</button>
+  <!-- skip btn removed -->
 </div>
 
 <!-- ═══════════════════════════════════════
@@ -990,10 +990,10 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
               <div class="hc-sub">push day</div>
             </div>
             <div class="hc" onclick="navigateTo('budget')">
-              <div class="hc-label">BUDGET</div>
-              <div class="hc-val" style="font-size:16px;color:var(--orange)">$<span id="home-spend">1,240</span></div>
-              <div class="hc-sub">of $2,500</div>
-              <div class="hc-bar"><div class="hc-bar-fill" id="home-budget-bar" style="width:50%;background:var(--orange)"></div></div>
+              <div class="hc-label">NET / MONTH</div>
+              <div class="hc-val" style="font-size:16px" id="home-net">—</div>
+              <div class="hc-sub" id="home-net-sub">loading...</div>
+              <div class="hc-bar"><div class="hc-bar-fill" id="home-budget-bar" style="width:0%;background:var(--green)"></div></div>
             </div>
           </div>
 
@@ -1102,10 +1102,17 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
         <div class="grid-2">
           <!-- Category spending -->
           <div class="card">
-            <div class="card-title">Spending by Category</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+              <div class="card-title" style="margin-bottom:0">Spending by Category</div>
+              <div style="display:flex;gap:0;border:1px solid var(--card-border);border-radius:3px;overflow:hidden">
+                <button id="cat-bar-btn" onclick="setCatView('bar')" style="background:rgba(0,245,255,0.12);border:none;color:var(--cyan);font-family:Share Tech Mono,monospace;font-size:8px;letter-spacing:0.15em;padding:4px 10px;cursor:pointer">BARS</button>
+                <button id="cat-pie-btn" onclick="setCatView('pie')" style="background:transparent;border:none;color:var(--text-muted);font-family:Share Tech Mono,monospace;font-size:8px;letter-spacing:0.15em;padding:4px 10px;cursor:pointer">PIE</button>
+              </div>
+            </div>
             <div id="b-categories">
               <div style="text-align:center;padding:24px;font-size:9px;letter-spacing:0.2em;color:var(--text-muted)">LOADING...</div>
             </div>
+            <canvas id="b-pie-chart" style="display:none;max-height:220px;width:100%"></canvas>
           </div>
 
           <!-- Budget limits progress -->
@@ -1381,6 +1388,98 @@ async function ledgerFetch(table, query='') {
   return r.json();
 }
 
+// ── BUDGET CATEGORY VIEW TOGGLE ──
+let catViewMode = 'bar';
+let catPieData = [];
+
+function setCatView(mode) {
+  catViewMode = mode;
+  const bars = document.getElementById('b-categories');
+  const pie  = document.getElementById('b-pie-chart');
+  const barBtn = document.getElementById('cat-bar-btn');
+  const pieBtn = document.getElementById('cat-pie-btn');
+  if (mode === 'bar') {
+    if (bars) bars.style.display = '';
+    if (pie)  pie.style.display  = 'none';
+    if (barBtn) { barBtn.style.background = 'rgba(0,245,255,0.12)'; barBtn.style.color = 'var(--cyan)'; }
+    if (pieBtn) { pieBtn.style.background = 'transparent'; pieBtn.style.color = 'var(--text-muted)'; }
+  } else {
+    if (bars) bars.style.display = 'none';
+    if (pie)  pie.style.display  = '';
+    if (barBtn) { barBtn.style.background = 'transparent'; barBtn.style.color = 'var(--text-muted)'; }
+    if (pieBtn) { pieBtn.style.background = 'rgba(0,245,255,0.12)'; pieBtn.style.color = 'var(--cyan)'; }
+    drawPieChart();
+  }
+}
+
+function drawPieChart() {
+  const canvas = document.getElementById('b-pie-chart');
+  if (!canvas || !catPieData.length) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth;
+  const H = 220;
+  canvas.width = W * window.devicePixelRatio;
+  canvas.height = H * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+  const cx = W / 2, cy = H / 2 - 10, r = Math.min(cx, cy) - 20;
+  const total = catPieData.reduce((s, d) => s + d.amt, 0);
+  let startAngle = -Math.PI / 2;
+
+  ctx.clearRect(0, 0, W, H);
+
+  catPieData.forEach((d, i) => {
+    const slice = (d.amt / total) * Math.PI * 2;
+    const endAngle = startAngle + slice;
+    const mid = startAngle + slice / 2;
+
+    // Slice
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, startAngle, endAngle);
+    ctx.closePath();
+    ctx.fillStyle = d.color;
+    ctx.shadowColor = d.color;
+    ctx.shadowBlur = 8;
+    ctx.fill();
+
+    // Gap between slices
+    ctx.strokeStyle = '#010a0f';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Label for slices > 5%
+    const pct = Math.round((d.amt / total) * 100);
+    if (pct >= 5) {
+      const lx = cx + (r * 0.68) * Math.cos(mid);
+      const ly = cy + (r * 0.68) * Math.sin(mid);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#010a0f';
+      ctx.font = `bold ${Math.round(10 * window.devicePixelRatio / window.devicePixelRatio)}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(pct + '%', lx, ly);
+    }
+
+    startAngle = endAngle;
+  });
+
+  // Legend
+  const legendX = 12, legendStartY = H - (catPieData.length * 16) - 4;
+  catPieData.forEach((d, i) => {
+    const y = legendStartY + i * 16;
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = d.color;
+    ctx.fillRect(legendX, y + 2, 10, 10);
+    ctx.fillStyle = 'rgba(224,248,255,0.7)';
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    const label = d.name.length > 14 ? d.name.slice(0,14) + '…' : d.name;
+    ctx.fillText(label, legendX + 14, y + 2);
+  });
+}
+
 // ── BUDGET MONTH NAVIGATION ──
 let budgetMonthOffset = 0; // 0 = current month, -1 = last month etc
 
@@ -1465,6 +1564,13 @@ async function loadBudgetData() {
       const sorted = Object.entries(catSpend).sort((a,b) => b[1]-a[1]).slice(0,8);
       const maxSpend = sorted[0]?.[1] || 1;
       const colors = ['#00f5ff','#ff6b00','#00ff88','#9b5de5','#f72585','#ffd700','#3b8bd4','#ff3b5c'];
+      // Store for pie chart
+      catPieData = sorted.map(([catId, amt], i) => ({
+        name: catMap[catId] ? catMap[catId].name : 'Other',
+        amt,
+        color: catMap[catId]?.color || colors[i % colors.length]
+      }));
+      if (catViewMode === 'pie') drawPieChart();
       catEl.innerHTML = sorted.map(([catId, amt], i) => {
         const cat = catMap[catId];
         const name = cat ? cat.name : 'Other';
@@ -2289,6 +2395,42 @@ function startScoreHold(delta) {
   scoreHoldInterval = setInterval(() => adjustScore(delta), 80);
 }
 function stopScoreHold() { clearInterval(scoreHoldInterval); }
+
+// Drag-to-scroll on the score number
+(function() {
+  let startY = 0, startScore = 72, dragging = false;
+  function onDown(e) {
+    dragging = true;
+    startY = e.touches ? e.touches[0].clientY : e.clientY;
+    startScore = selectedScore;
+    e.preventDefault();
+  }
+  function onMove(e) {
+    if (!dragging) return;
+    const y = e.touches ? e.touches[0].clientY : e.clientY;
+    const dy = startY - y; // drag up = increase
+    const delta = Math.round(dy / 3);
+    selectedScore = Math.max(0, Math.min(100, startScore + delta));
+    const num = document.getElementById('briefing-score-num');
+    const bar = document.getElementById('briefing-score-bar');
+    const qual = document.getElementById('briefing-score-quality');
+    if (num) num.textContent = selectedScore;
+    if (bar) bar.style.width = selectedScore + '%';
+    if (qual) qual.textContent = selectedScore >= 80 ? 'EXCELLENT' : selectedScore >= 65 ? 'GOOD' : selectedScore >= 50 ? 'FAIR' : 'POOR';
+    e.preventDefault();
+  }
+  function onUp() { dragging = false; }
+  document.addEventListener('DOMContentLoaded', () => {
+    const el = document.getElementById('briefing-score-num');
+    if (!el) return;
+    el.addEventListener('mousedown', onDown);
+    el.addEventListener('touchstart', onDown, {passive:false});
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('touchmove', onMove, {passive:false});
+    window.addEventListener('mouseup', onUp);
+    window.addEventListener('touchend', onUp);
+  });
+})();
 
 async function saveBriefingSleep() {
   if (!selectedHours) {
