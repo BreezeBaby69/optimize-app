@@ -1421,10 +1421,16 @@ async function loadBudgetData() {
       ledgerFetch('recurring_transactions', '?order=amount.asc')
     ]);
 
-    if (!txRaw) return;
+    console.log('txRaw:', txRaw?.length, txRaw?.[0]);
+    console.log('cats:', cats?.length, cats?.[0]);
+    console.log('recurring:', recurring?.length, recurring?.[0]);
+
+    if (!txRaw) { console.log('txRaw is null — RLS blocking'); return; }
 
     const transactions = txRaw.filter(t => t.amount < 0); // expenses only
     const income       = txRaw.filter(t => t.amount > 0); // income
+
+    console.log('expenses:', transactions.length, 'income:', income.length);
 
     // Build category lookup
     const catMap = {};
