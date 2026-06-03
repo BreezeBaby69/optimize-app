@@ -1421,16 +1421,10 @@ async function loadBudgetData() {
       ledgerFetch('recurring_transactions', '?order=amount.asc')
     ]);
 
-    console.log('txRaw:', txRaw?.length, txRaw?.[0]);
-    console.log('cats:', cats?.length, cats?.[0]);
-    console.log('recurring:', recurring?.length, recurring?.[0]);
-
-    if (!txRaw) { console.log('txRaw is null — RLS blocking'); return; }
+    if (!txRaw || !Array.isArray(txRaw)) return;
 
     const transactions = txRaw.filter(t => t.amount < 0); // expenses only
     const income       = txRaw.filter(t => t.amount > 0); // income
-
-    console.log('expenses:', transactions.length, 'income:', income.length);
 
     // Build category lookup
     const catMap = {};
@@ -1457,7 +1451,7 @@ async function loadBudgetData() {
     const homeSpend = el('home-spend');
     if(homeSpend) homeSpend.textContent = totalSpent.toLocaleString('en-CA', {maximumFractionDigits:0});
     const budgetBar = el('home-budget-bar');
-    if(budgetBar && totalBudgeted > 0) budgetBar.style.width = Math.min(100, Math.round((totalSpent/totalBudgeted)*100)) + '%';
+    // budget bar removed — no budget limits table
 
     // Category breakdown
     const catSpend = {};
@@ -2412,7 +2406,6 @@ function initDashboard() {
   updateHomeSats();
   dashTick();
   loadSupabaseData();
-  loadBudgetData();
   setInterval(dashTick, 1000);
   setInterval(updateHomeRing, 60000);
   setInterval(fetchWeather, 60 * 60 * 1000);
