@@ -1063,7 +1063,15 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
             <div class="page-title">BUDGET</div>
             <div class="page-sub">LIVE DATA FROM LEDGER</div>
           </div>
-          <a href="https://ledger-theta-red.vercel.app/" target="_blank" class="btn sm" style="text-decoration:none">OPEN LEDGER ↗</a>
+          <!-- Month navigator -->
+          <div style="display:flex;align-items:center;gap:12px">
+            <button onclick="shiftBudgetMonth(-1)" style="background:transparent;border:1px solid var(--card-border);color:var(--cyan);font-size:14px;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .2s" onmouseover="this.style.borderColor='var(--cyan)'" onmouseout="this.style.borderColor='var(--card-border)'">←</button>
+            <div style="text-align:center;min-width:120px">
+              <div style="font-family:Orbitron,monospace;font-size:12px;font-weight:700;letter-spacing:0.15em;color:var(--cyan)" id="budget-month-label">—</div>
+            </div>
+            <button onclick="shiftBudgetMonth(1)" id="budget-next-btn" style="background:transparent;border:1px solid var(--card-border);color:var(--cyan);font-size:14px;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .2s" onmouseover="this.style.borderColor='var(--cyan)'" onmouseout="this.style.borderColor='var(--card-border)'">→</button>
+            <a href="https://ledger-theta-red.vercel.app/" target="_blank" class="btn sm" style="text-decoration:none">OPEN LEDGER ↗</a>
+          </div>
         </div>
 
         <!-- Summary stat row -->
@@ -1373,12 +1381,38 @@ async function ledgerFetch(table, query='') {
   return r.json();
 }
 
+// ── BUDGET MONTH NAVIGATION ──
+let budgetMonthOffset = 0; // 0 = current month, -1 = last month etc
+
+function shiftBudgetMonth(delta) {
+  const now = new Date();
+  const newOffset = budgetMonthOffset + delta;
+  // Can't go into the future
+  if (newOffset > 0) return;
+  budgetMonthOffset = newOffset;
+  // Disable next button if at current month
+  const nextBtn = document.getElementById('budget-next-btn');
+  if (nextBtn) nextBtn.style.opacity = budgetMonthOffset === 0 ? '0.3' : '1';
+  loadBudgetData();
+}
+
 async function loadBudgetData() {
   try {
-    // Get current month range
+    // Get month range based on offset
     const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10);
-    const monthEnd = new Date(now.getFullYear(), now.getMonth()+1, 0).toISOString().slice(0,10);
+    const targetDate = new Date(now.getFullYear(), now.getMonth() + budgetMonthOffset, 1);
+    const monthStart = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1).toISOString().slice(0,10);
+    const monthEnd = new Date(targetDate.getFullYear(), targetDate.getMonth()+1, 0).toISOString().slice(0,10);
+
+    // Update month label
+    const monthLabel = document.getElementById('budget-month-label');
+    if (monthLabel) {
+      const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+      monthLabel.textContent = MONTHS[targetDate.getMonth()] + ' ' + targetDate.getFullYear();
+    }
+    // Disable next button at current month
+    const nextBtn = document.getElementById('budget-next-btn');
+    if (nextBtn) nextBtn.style.opacity = budgetMonthOffset === 0 ? '0.3' : '1';
 
     // Fetch transactions, categories, budgets in parallel
     const [txRaw, cats, budgets] = await Promise.all([
