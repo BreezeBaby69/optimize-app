@@ -3252,17 +3252,47 @@ async function saveTodoModal() {
   const priority = document.getElementById('todo-modal-priority')?.value || 'med';
   const category = document.getElementById('todo-modal-cat')?.value.trim() || '';
   const due_date = document.getElementById('todo-modal-due')?.value || null;
-  if(editingTodoId) {
-    await supaFetch('todos','PATCH',{text,priority,category,due_date},`?id=eq.${editingTodoId}`);
-    const idx = todos.findIndex(t=>t.id===editingTodoId);
-    if(idx>-1) todos[idx] = {...todos[idx],text,priority,category,due_date};
-  } else {
-    const res = await supaFetch('todos','POST',{text,priority,category,done:false,due_date});
-    if(res?.[0]) todos.unshift(res[0]);
+  const saveBtn = document.getElementById('todo-modal-save');
+  if(saveBtn) { saveBtn.textContent = 'SAVING...'; saveBtn.disabled = true; }
+  try {
+    if(editingTodoId) {
+      await supaFetch('todos','PATCH',{text,priority,category,due_date},`?id=eq.${editingTodoId}`);
+      const idx = todos.findIndex(t=>t.id===editingTodoId);
+      if(idx>-1) todos[idx] = {...todos[idx],text,priority,category,due_date};
+    } else {
+      // Use direct fetch for more control
+      const body = {text, priority, category, done: false};
+      if(due_date) body.due_date = due_date;
+      const r = await fetch(SUPA_URL+'/rest/v1/todos', {
+        method:'POST',
+        headers:{
+          'apikey': SUPA_KEY,
+          'Authorization': 'Bearer '+SUPA_KEY,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify(body)
+      });
+      const data = await r.json();
+      console.log('Todo insert response:', data);
+      if(Array.isArray(data) && data[0]) {
+        todos.unshift(data[0]);
+      } else if(data && data.id) {
+        todos.unshift(data);
+      } else {
+        // Fallback: add locally with temp id
+        todos.unshift({id: 'tmp-'+Date.now(), text, priority, category, due_date, done:false, created_at: new Date().toISOString()});
+      }
+    }
+    closeTodoModal();
+    renderTodos();
+    updateBadge();
+  } catch(e) {
+    console.error('Save todo error:', e);
+    alert('Error saving task: ' + e.message);
+  } finally {
+    if(saveBtn) { saveBtn.textContent = editingTodoId ? 'SAVE CHANGES' : 'ADD TASK'; saveBtn.disabled = false; }
   }
-  closeTodoModal();
-  renderTodos();
-  updateBadge();
 }
 
 function saveTodos() { /* legacy compat */ }
