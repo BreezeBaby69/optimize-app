@@ -662,6 +662,11 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
 .hc::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,var(--cyan),transparent); opacity:.15; }
 .hc:hover { border-color:var(--card-border-hover); }
 .hc-label { font-size:7px; letter-spacing:0.3em; color:var(--text-muted); margin-bottom:4px; }
+.home-tile{background:var(--card);border:1px solid var(--card-border);border-radius:4px;padding:10px 12px;cursor:pointer;transition:border-color .2s,background .2s;border-left:2px solid transparent}
+.home-tile:hover{background:rgba(0,245,255,0.03)}
+.home-tile.active{background:rgba(0,245,255,0.04)}
+@keyframes heroFade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+#hero-content{animation:heroFade .25s ease}
 .hc-val { font-family:Orbitron,monospace; font-size:22px; font-weight:700; color:var(--cyan); line-height:1; }
 .hc-sub { font-size:8px; letter-spacing:0.1em; color:var(--text-muted); margin-top:3px; flex:1; }
 .hc-bar { height:2px; background:rgba(0,245,255,0.08); border-radius:1px; margin-top:8px; overflow:hidden; }
@@ -960,89 +965,74 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
           </div>
         </div>
 
-        <!-- ── HERO WORKOUT CARD ── -->
-        <div onclick="navigateTo('health')" style="cursor:pointer;background:var(--card);border:1px solid rgba(255,77,109,0.25);border-radius:6px;padding:16px 18px;position:relative;overflow:hidden;flex-shrink:0">
-          <!-- Accent line -->
-          <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#ff4d6d,rgba(255,77,109,0.2),transparent)"></div>
-          <!-- Decorative ring - small, right side -->
-          <div style="position:absolute;right:-30px;top:50%;transform:translateY(-50%)">
-            <svg width="140" height="140" opacity="0.12">
-              <circle cx="70" cy="70" r="60" fill="none" stroke="#ff4d6d" stroke-width="1" stroke-dasharray="3 8"/>
-              <circle cx="70" cy="70" r="46" fill="none" stroke="#ff4d6d" stroke-width="8"
+        <!-- ── DYNAMIC HERO CARD ── -->
+        <div id="home-hero" style="background:var(--card);border:1px solid var(--card-border);border-radius:6px;padding:0;position:relative;overflow:hidden;flex-shrink:0;min-height:160px;transition:border-color .3s">
+          <div style="position:absolute;top:0;left:0;right:0;height:2px" id="hero-accent-line"></div>
+          <!-- Ring -->
+          <div style="position:absolute;right:-30px;top:50%;transform:translateY(-50%);pointer-events:none">
+            <svg width="140" height="140" opacity="0.15">
+              <circle cx="70" cy="70" r="60" fill="none" stroke-width="1" stroke-dasharray="3 8" id="hero-ring-outer"/>
+              <circle cx="70" cy="70" r="46" fill="none" stroke-width="8"
                 stroke-dasharray="289" stroke-dashoffset="289"
                 transform="rotate(-90 70 70)" id="day-ring"
                 style="transition:stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1)"/>
             </svg>
             <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
-              <div style="font-family:Orbitron,monospace;font-size:20px;font-weight:900;color:#ff4d6d;line-height:1" id="day-pct">0%</div>
-              <div style="font-size:6px;letter-spacing:0.2em;color:rgba(255,77,109,0.5);margin-top:2px">DAY</div>
-              <div style="font-size:7px;color:rgba(255,77,109,0.5);margin-top:3px;text-align:center" id="day-remaining">—</div>
+              <div style="font-family:Orbitron,monospace;font-size:20px;font-weight:900;line-height:1" id="day-pct">0%</div>
+              <div style="font-size:6px;letter-spacing:0.2em;opacity:.5;margin-top:2px" id="hero-ring-label">DAY</div>
+              <div style="font-size:7px;opacity:.5;margin-top:3px;text-align:center" id="day-remaining">—</div>
             </div>
           </div>
-
-          <div style="max-width:calc(100% - 130px)">
-            <div style="font-size:8px;letter-spacing:0.25em;color:rgba(255,77,109,0.6);margin-bottom:4px">TODAY'S WORKOUT</div>
-            <div style="font-family:Orbitron,monospace;font-size:clamp(14px,2vw,20px);font-weight:700;color:#ff4d6d;margin-bottom:2px;letter-spacing:0.06em" id="home-workout">—</div>
-            <div style="font-size:9px;color:rgba(255,77,109,0.5);letter-spacing:0.1em;margin-bottom:12px" id="home-workout-sub">—</div>
-            <!-- Exercise preview list -->
-            <div id="home-workout-exercises" style="display:flex;flex-direction:column;gap:4px"></div>
-          </div>
+          <!-- Content -->
+          <div id="hero-content" style="padding:16px 18px;max-width:calc(100% - 120px)"></div>
         </div>
 
-        <!-- ── STAT STRIP ── -->
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;flex-shrink:0">
-
-          <!-- Tasks -->
-          <div class="hc" onclick="navigateTo('todo')" style="border-left:2px solid var(--cyan);border-radius:0 4px 4px 0">
+        <!-- ── STAT TILES ── -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;flex-shrink:0">
+          <div class="home-tile" id="tile-workout" onclick="setHero('workout')" data-color="#ff4d6d">
+            <div class="hc-label">WORKOUT</div>
+            <div style="font-size:12px;font-weight:700;color:#ff4d6d;letter-spacing:0.05em;margin:3px 0;line-height:1.3" id="home-workout">—</div>
+            <div class="hc-sub" id="home-workout-sub">—</div>
+          </div>
+          <div class="home-tile" id="tile-tasks" onclick="setHero('tasks')" data-color="var(--cyan)">
             <div class="hc-label">TASKS</div>
             <div class="hc-val" id="home-tasks">—</div>
             <div class="hc-sub">remaining</div>
-            <div class="hc-bar"><div class="hc-bar-fill" id="home-tasks-bar" style="width:0%;background:var(--cyan)"></div></div>
           </div>
+          <div class="home-tile" id="tile-budget" onclick="setHero('budget')" data-color="var(--green)">
+            <div class="hc-label">NET / MONTH</div>
+            <div class="hc-val" style="font-size:16px" id="home-net">—</div>
+            <div class="hc-sub" id="home-net-sub">—</div>
+          </div>
+        </div>
 
-          <!-- Reading -->
-          <div class="hc" onclick="navigateTo('reading')" style="border-left:2px solid var(--pink);border-radius:0 4px 4px 0">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;flex-shrink:0">
+          <div class="home-tile" id="tile-reading" onclick="setHero('reading')" data-color="var(--pink)">
             <div class="hc-label">READING</div>
             <div class="hc-val" style="font-size:18px;color:var(--pink)" id="home-read-pct">—</div>
             <div class="hc-sub" id="home-book-title">—</div>
             <div class="hc-bar"><div class="hc-bar-fill" id="home-read-bar" style="width:0%;background:var(--pink)"></div></div>
           </div>
-
-          <!-- Weight -->
-          <div class="hc" onclick="navigateTo('health')" style="border-left:2px solid var(--text-secondary);border-radius:0 4px 4px 0">
-            <div class="hc-label">WEIGHT</div>
-            <div class="hc-val" style="color:var(--text-secondary)" id="home-weight">—</div>
-            <div class="hc-sub">lbs</div>
-          </div>
-
-          <!-- Net -->
-          <div class="hc" onclick="navigateTo('budget')" style="border-left:2px solid var(--green);border-radius:0 4px 4px 0">
-            <div class="hc-label">NET / MONTH</div>
-            <div class="hc-val" style="font-size:16px" id="home-net">—</div>
-            <div class="hc-sub" id="home-net-sub">—</div>
-            <div class="hc-bar"><div class="hc-bar-fill" id="home-budget-bar" style="width:0%;background:var(--green)"></div></div>
-          </div>
-
-        </div>
-
-        <!-- ── BOTTOM ROW: Streak + Sleep ── -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;flex-shrink:0">
-          <div class="hc" onclick="navigateTo('habits')" style="border-left:2px solid var(--orange);border-radius:0 4px 4px 0">
-            <div class="hc-label">HABIT STREAK</div>
+          <div class="home-tile" id="tile-habits" onclick="setHero('habits')" data-color="var(--orange)">
+            <div class="hc-label">STREAK</div>
             <div class="hc-val" style="color:var(--orange)" id="home-streak">—</div>
             <div class="hc-sub">days 🔥</div>
           </div>
-          <div class="hc" onclick="navigateTo('health')" style="border-left:2px solid var(--purple);border-radius:0 4px 4px 0">
-            <div class="hc-label">LAST SLEEP</div>
-            <div style="display:flex;align-items:baseline;gap:8px;margin:4px 0">
-              <div class="hc-val" style="color:var(--cyan)" id="home-sleep-hrs">—</div>
-              <div style="font-size:9px;color:var(--text-muted)">hrs</div>
+          <div class="home-tile" id="tile-health" onclick="setHero('health')" data-color="var(--purple)">
+            <div class="hc-label">SLEEP / WEIGHT</div>
+            <div style="display:flex;align-items:baseline;gap:5px;margin:3px 0">
+              <div class="hc-val" style="font-size:16px;color:var(--cyan)" id="home-sleep-hrs">—</div>
+              <div style="font-size:8px;color:var(--text-muted)">h</div>
               <div class="hc-val" style="font-size:16px;color:var(--purple)" id="home-sleep-score">—</div>
-              <div style="font-size:9px;color:var(--text-muted)">score</div>
             </div>
-            <div class="hc-sub" id="home-sleep-quality">—</div>
+            <div style="font-size:8px;color:var(--text-muted)" id="home-weight">—<span style="color:var(--text-muted)"> lbs</span></div>
           </div>
         </div>
+
+        <!-- Hidden compat -->
+        <span id="home-sleep-quality" style="display:none"></span>
+        <span id="home-budget-bar" style="display:none"></span>
+        <span id="home-tasks-bar" style="display:none"></span>
 
         <!-- Hidden compat elements -->
         <span id="w-hum" style="display:none"></span>
@@ -1563,6 +1553,14 @@ async function loadBudgetData() {
       const sorted = Object.entries(catSpend).sort((a,b) => b[1]-a[1]).slice(0,8);
       const maxSpend = sorted[0]?.[1] || 1;
       const colors = ['#00f5ff','#ff6b00','#00ff88','#9b5de5','#f72585','#ffd700','#3b8bd4','#ff3b5c'];
+      // Store for hero card
+      window._heroBudgetCats = sorted.map(([catId, amt], i) => ({
+        name: catMap[catId] ? catMap[catId].name : 'Other',
+        amt: fmt(amt),
+        pct: Math.round((amt / maxSpend) * 100),
+        color: catMap[catId]?.color || colors[i % colors.length]
+      }));
+      if(currentHero==='budget') setHero('budget');
       // Store for pie chart
       catPieData = sorted.map(([catId, amt], i) => ({
         name: catMap[catId] ? catMap[catId].name : 'Other',
@@ -1987,20 +1985,22 @@ async function loadBriefingWorkout() {
     const hwsub = document.getElementById('home-workout-sub');
     if(hw) hw.textContent = dayName;
     if(hwsub) hwsub.textContent = progName;
-    // Show first 4 exercises as preview
-    const previewEl = document.getElementById('home-workout-exercises');
-    if(previewEl && sorted) {
-      previewEl.innerHTML = sorted.slice(0,4).map((pe,i)=>{
-        const ex = exMap[pe.exercise_id]||{};
-        const ss = pe.superset_group;
-        return `<div style="display:flex;align-items:center;gap:8px;padding:3px 0;border-bottom:1px solid rgba(255,77,109,0.08)">
-          ${ss?`<span style="font-family:Orbitron,monospace;font-size:7px;font-weight:700;color:#ff4d6d;background:rgba(255,77,109,0.1);border:1px solid rgba(255,77,109,0.25);width:14px;height:14px;display:flex;align-items:center;justify-content:center;border-radius:2px;flex-shrink:0">${ss}</span>`:'<span style="width:14px;flex-shrink:0"></span>'}
-          <span style="font-size:10px;color:rgba(255,77,109,0.75);flex:1;letter-spacing:0.04em">${ex.name||'—'}</span>
-          <span style="font-size:9px;color:rgba(255,77,109,0.4);white-space:nowrap">${pe.sets||3}×${pe.reps||10}</span>
-        </div>`;
-      }).join('');
-      if(sorted.length>4) previewEl.innerHTML += `<div style="font-size:8px;color:rgba(255,77,109,0.35);margin-top:4px;letter-spacing:0.12em">+${sorted.length-4} more</div>`;
-    }
+    // Store exercise HTML for hero card
+    const exHtml = sorted.slice(0,5).map((pe,i)=>{
+      const ex = exMap[pe.exercise_id]||{};
+      const ss = pe.superset_group;
+      return `<div style="display:flex;align-items:center;gap:8px;padding:3px 0;border-bottom:1px solid rgba(255,77,109,0.08)">
+        ${ss?`<span style="font-family:Orbitron,monospace;font-size:7px;font-weight:700;color:#ff4d6d;background:rgba(255,77,109,0.1);border:1px solid rgba(255,77,109,0.25);width:14px;height:14px;display:flex;align-items:center;justify-content:center;border-radius:2px;flex-shrink:0">${ss}</span>`:'<span style="width:14px;flex-shrink:0"></span>'}
+        <span style="font-size:10px;color:rgba(255,77,109,0.75);flex:1;letter-spacing:0.04em">${ex.name||'—'}</span>
+        <span style="font-size:9px;color:rgba(255,77,109,0.4);white-space:nowrap">${pe.sets||3}×${pe.reps||10}</span>
+      </div>`;
+    }).join('') + (sorted.length>5?`<div style="font-size:8px;color:rgba(255,77,109,0.35);margin-top:4px;letter-spacing:0.12em">+${sorted.length-5} more</div>`:'');
+    // Store in hidden element
+    let exStore = document.getElementById('home-workout-exercises-data');
+    if(!exStore){ exStore=document.createElement('div'); exStore.id='home-workout-exercises-data'; exStore.style.display='none'; document.body.appendChild(exStore); }
+    exStore.innerHTML = exHtml;
+    // If workout hero is active, re-render
+    if(currentHero==='workout') setHero('workout');
 
   } catch(e) {
     el.innerHTML = `<div class="card-heading" style="color:#ff4d6d">Workout</div><div style="font-size:9px;color:rgba(255,77,109,0.4);margin-top:12px;letter-spacing:.15em">UNABLE TO LOAD</div>`;
@@ -2835,10 +2835,176 @@ function initDashboard() {
   updateHomeSats();
   dashTick();
   loadSupabaseData();
-  loadBriefingWorkout(); // keep home workout tile live
+  loadBriefingWorkout();
+  setTimeout(()=>setHero('workout'), 400);
   setInterval(dashTick, 1000);
   setInterval(updateHomeRing, 60000);
   setInterval(fetchWeather, 60 * 60 * 1000);
+}
+
+// ── DYNAMIC HERO CARD ──
+let currentHero = 'workout';
+const HERO_COLORS = {
+  workout: '#ff4d6d', tasks: '#00f5ff', budget: '#00ff88',
+  reading: '#f72585', habits: '#ff6b00', health: '#9b5de5'
+};
+
+function setHero(type) {
+  currentHero = type;
+  const color = HERO_COLORS[type] || '#00f5ff';
+  // Update hero border + accent
+  const hero = document.getElementById('home-hero');
+  if(hero) hero.style.borderColor = color.replace('var(--','').replace(')','') === color ? color+'44' : 'rgba(0,245,255,0.15)';
+  hero.style.borderColor = color+'55';
+  // Accent line
+  const line = document.getElementById('hero-accent-line');
+  if(line) line.style.background = `linear-gradient(90deg,${color},${color}33,transparent)`;
+  // Ring color
+  const ring = document.getElementById('day-ring');
+  const ringOuter = document.getElementById('hero-ring-outer');
+  const ringLabel = document.getElementById('hero-ring-label');
+  const pctEl = document.getElementById('day-pct');
+  const remEl = document.getElementById('day-remaining');
+  if(ring) ring.style.stroke = color;
+  if(ringOuter) ringOuter.style.stroke = color;
+  if(pctEl) pctEl.style.color = color;
+  if(remEl) remEl.style.color = color;
+  // Active tile highlight
+  document.querySelectorAll('.home-tile').forEach(t => {
+    t.classList.remove('active');
+    t.style.borderLeftColor = 'transparent';
+  });
+  const activeTile = document.getElementById('tile-'+type);
+  if(activeTile) {
+    activeTile.classList.add('active');
+    activeTile.style.borderLeftColor = color;
+  }
+  // Render hero content
+  const content = document.getElementById('hero-content');
+  if(!content) return;
+  // Re-trigger animation
+  content.style.animation = 'none';
+  content.offsetHeight;
+  content.style.animation = '';
+  switch(type) {
+    case 'workout': renderHeroWorkout(content, color); break;
+    case 'tasks':   renderHeroTasks(content, color);   break;
+    case 'budget':  renderHeroBudget(content, color);  break;
+    case 'reading': renderHeroReading(content, color); break;
+    case 'habits':  renderHeroHabits(content, color);  break;
+    case 'health':  renderHeroHealth(content, color);  break;
+  }
+}
+
+function heroHeader(label, color) {
+  return `<div style="font-size:8px;letter-spacing:0.25em;color:${color}99;margin-bottom:6px">${label}</div>`;
+}
+
+function renderHeroWorkout(el, color) {
+  const name = document.getElementById('home-workout')?.textContent||'—';
+  const sub  = document.getElementById('home-workout-sub')?.textContent||'—';
+  const exEl = document.getElementById('home-workout-exercises-data');
+  const exHtml = exEl ? exEl.innerHTML : '';
+  el.innerHTML = heroHeader("TODAY'S WORKOUT", color) +
+    `<div style="font-family:Orbitron,monospace;font-size:clamp(14px,2vw,22px);font-weight:700;color:${color};letter-spacing:0.06em;margin-bottom:3px">${name}</div>
+    <div style="font-size:9px;color:${color}77;letter-spacing:0.1em;margin-bottom:14px">${sub}</div>
+    <div id="home-workout-exercises" style="display:flex;flex-direction:column;gap:5px">${exHtml}</div>`;
+}
+
+function renderHeroTasks(el, color) {
+  const taskData = window._heroTasks || [];
+  const pending = taskData.filter(t=>!t.done);
+  const done = taskData.filter(t=>t.done);
+  el.innerHTML = heroHeader('MISSION CONTROL // TASKS', color) +
+    `<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:14px">
+      <div style="font-family:Orbitron,monospace;font-size:36px;font-weight:900;color:${color};line-height:1">${pending.length}</div>
+      <div style="font-size:9px;color:${color}77;letter-spacing:0.15em">REMAINING · ${done.length} DONE</div>
+    </div>` +
+    (pending.length ? pending.map(t=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(0,245,255,0.06)">
+        <div style="width:12px;height:12px;border:1.5px solid ${color}66;border-radius:2px;flex-shrink:0"></div>
+        <div style="font-size:11px;color:var(--text);flex:1">${t.text}</div>
+        <div style="font-size:8px;letter-spacing:0.1em;padding:2px 6px;border:1px solid ${color}33;color:${color}88;border-radius:2px">${t.priority?.toUpperCase()||''}</div>
+      </div>`).join('') : `<div style="font-size:9px;color:var(--text-muted);letter-spacing:0.15em;padding:8px 0">ALL TASKS COMPLETE ✓</div>`);
+}
+
+function renderHeroBudget(el, color) {
+  const net = document.getElementById('home-net')?.textContent||'—';
+  const sub = document.getElementById('home-net-sub')?.textContent||'—';
+  const cats = window._heroBudgetCats || [];
+  el.innerHTML = heroHeader('BUDGET // MONTHLY OVERVIEW', color) +
+    `<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:14px">
+      <div style="font-family:Orbitron,monospace;font-size:36px;font-weight:900;color:${color};line-height:1">${net}</div>
+      <div style="font-size:9px;color:${color}77;letter-spacing:0.12em">${sub.toUpperCase()}</div>
+    </div>` +
+    (cats.length ? cats.slice(0,5).map(cat=>`
+      <div style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+          <span style="font-size:10px;color:var(--text-secondary)">${cat.name}</span>
+          <span style="font-family:Orbitron,monospace;font-size:10px;color:var(--text)">${cat.amt}</span>
+        </div>
+        <div style="height:2px;background:rgba(0,245,255,0.08);border-radius:1px">
+          <div style="height:100%;width:${cat.pct}%;background:${cat.color||color};border-radius:1px;transition:width .6s ease"></div>
+        </div>
+      </div>`).join('') : `<div style="font-size:9px;color:var(--text-muted);letter-spacing:0.15em">OPEN BUDGET TAB TO LOAD DATA</div>`);
+}
+
+function renderHeroReading(el, color) {
+  const pct = document.getElementById('home-read-pct')?.textContent||'—';
+  const book = document.getElementById('home-book-title')?.textContent||'—';
+  el.innerHTML = heroHeader('READING // KNOWLEDGE ACQUIRED', color) +
+    `<div style="font-family:Orbitron,monospace;font-size:36px;font-weight:900;color:${color};line-height:1;margin-bottom:6px">${pct}</div>
+    <div style="font-size:13px;color:${color}99;letter-spacing:0.06em;margin-bottom:16px">${book}</div>
+    <div style="height:6px;background:rgba(247,37,133,0.1);border-radius:3px;overflow:hidden;margin-bottom:8px">
+      <div style="height:100%;width:${pct};background:${color};box-shadow:0 0 10px ${color}66;border-radius:3px;transition:width .8s ease"></div>
+    </div>
+    <div style="font-size:8px;color:${color}55;letter-spacing:0.15em">TAP TO OPEN READING LOG →</div>`;
+}
+
+function renderHeroHabits(el, color) {
+  const streak = document.getElementById('home-streak')?.textContent||'—';
+  const habitData = window._heroHabits || [];
+  el.innerHTML = heroHeader('DAILY PROTOCOLS // HABITS', color) +
+    `<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:14px">
+      <div style="font-family:Orbitron,monospace;font-size:36px;font-weight:900;color:${color};line-height:1">${streak}</div>
+      <div style="font-size:9px;color:${color}77;letter-spacing:0.15em">DAY STREAK 🔥</div>
+    </div>` +
+    (habitData.length ? habitData.map(h=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid rgba(255,107,0,0.06)">
+        <div style="width:14px;height:14px;border-radius:2px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;${h.done?`background:${color}33;border:1px solid ${color}66;color:${color}`:`border:1px solid ${color}33;color:transparent`}">✓</div>
+        <div style="font-size:11px;color:${h.done?'var(--text)':'var(--text-muted)'};flex:1">${h.name}</div>
+      </div>`).join('') : `<div style="font-size:9px;color:var(--text-muted);letter-spacing:0.15em">NO HABITS CONFIGURED</div>`);
+}
+
+function renderHeroHealth(el, color) {
+  const hrs   = document.getElementById('home-sleep-hrs')?.textContent||'—';
+  const score = document.getElementById('home-sleep-score')?.textContent||'—';
+  const wt    = window._heroWeight||'—';
+  const q = parseInt(score)>=80?'EXCELLENT':parseInt(score)>=65?'GOOD':parseInt(score)>=50?'FAIR':score==='—'?'—':'POOR';
+  const qcol = parseInt(score)>=80?'var(--green)':parseInt(score)>=65?'var(--cyan)':parseInt(score)>=50?'var(--yellow)':'var(--red)';
+  el.innerHTML = heroHeader('HEALTH // RECOVERY & BODY', color) +
+    `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
+      <div>
+        <div style="font-size:7px;letter-spacing:0.2em;color:${color}66;margin-bottom:4px">SLEEP HRS</div>
+        <div style="font-family:Orbitron,monospace;font-size:28px;font-weight:700;color:var(--cyan);line-height:1">${hrs}</div>
+      </div>
+      <div>
+        <div style="font-size:7px;letter-spacing:0.2em;color:${color}66;margin-bottom:4px">SLEEP SCORE</div>
+        <div style="font-family:Orbitron,monospace;font-size:28px;font-weight:700;color:${color};line-height:1">${score}</div>
+        <div style="font-size:8px;color:${qcol};margin-top:3px;letter-spacing:0.1em">${q}</div>
+      </div>
+      <div>
+        <div style="font-size:7px;letter-spacing:0.2em;color:${color}66;margin-bottom:4px">WEIGHT</div>
+        <div style="font-family:Orbitron,monospace;font-size:28px;font-weight:700;color:var(--text-secondary);line-height:1">${wt}</div>
+        <div style="font-size:8px;color:var(--text-muted);margin-top:3px">lbs</div>
+      </div>
+    </div>`;
+}
+
+function updateHomeSats() {
+  // Populate task data for hero
+  window._heroTasks = todos || [];
+  window._heroHabits = habits ? habits.map(h=>({name:h.name,done:h.done})) : [];
 }
 
 function updateHomeRing() {
