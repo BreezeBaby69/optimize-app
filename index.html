@@ -2966,6 +2966,7 @@ function initDashboard() {
   dashTick();
   loadSupabaseData();
   loadBriefingWorkout();
+  loadJournalForHome();
   setTimeout(()=>setHero('workout'), 400);
   setInterval(dashTick, 1000);
   setInterval(updateHomeRing, 60000);
@@ -3288,30 +3289,34 @@ async function renderHeroBudget(el, color) {
 
 
 
-async function initJournal() {
-  const now = new Date();
-  journalToday = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
-  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const label = document.getElementById('journal-date-label');
-  if(label) label.textContent = dayNames[now.getDay()].toUpperCase()+' · '+monthNames[now.getMonth()].toUpperCase()+' '+now.getDate()+', '+now.getFullYear();
-
-  // Load today's entry from Supabase
+async function loadJournalForHome() {
   try {
-    const rows = await supaFetch('journal','GET',null,`?date=eq.${journalToday}`);
-    if(rows?.[0]) {
-      // Have entry for today — populate prompt and text
-      document.getElementById('journal-prompt-text').textContent = rows[0].prompt;
-      document.getElementById('journal-entry-text').value = rows[0].entry||'';
-      setJournalStatus(rows[0].entry ? 'Saved ✓' : '');
-    } else {
-      // No entry yet — generate prompt
-      await generateJournalPrompt(false);
-    }
-  } catch(e) { await generateJournalPrompt(false); }
+    const now = new Date();
+    const todayStr = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+    const rows = await supaFetch('journal','GET',null,`?date=eq.${todayStr}`);
+    const entry = rows?.[0];
+    window._journalPrompt = entry?.prompt || '';
+    window._journalWritten = !!(entry?.entry?.trim());
 
-  loadJournalArchive();
+    // Update tile
+    const promptEl = document.getElementById('home-journal-prompt');
+    const streakEl = document.getElementById('home-journal-streak');
+    if(promptEl && entry?.prompt) {
+      const p = entry.prompt;
+      promptEl.textContent = p.length>55 ? p.slice(0,55)+'...' : p;
+    }
+
+    // Calc streak
+    const all = await supaFetch('journal','GET',null,'?order=date.desc&limit=30')||[];
+    const withText = all.filter(e=>e.entry?.trim());
+    const streak = calcJournalStreak(withText);
+    if(streakEl) streakEl.textContent = streak+' day streak';
+
+    // If journal hero is active, re-render
+    if(typeof currentHero!=='undefined' && currentHero==='habits') setHero('habits');
+  } catch(e) { console.log('Journal home load error:', e); }
 }
+
 
 async function generateJournalPrompt(force=false) {
   const promptEl = document.getElementById('journal-prompt-text');
@@ -3470,6 +3475,56 @@ function updateHomeRing() {
 // ═══ JOURNAL ═══
 let journalToday = '';
 let journalUnsaved = false;
+
+async function loadJournalForHome() {
+  try {
+    const now = new Date();
+    const todayStr = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+    const rows = await supaFetch('journal','GET',null,`?date=eq.${todayStr}`);
+    const entry = rows?.[0];
+    window._journalPrompt = entry?.prompt || '';
+    window._journalWritten = !!(entry?.entry?.trim());
+
+    // Update tile
+    const promptEl = document.getElementById('home-journal-prompt');
+    const streakEl = document.getElementById('home-journal-streak');
+    if(promptEl && entry?.prompt) {
+      const p = entry.prompt;
+      promptEl.textContent = p.length>55 ? p.slice(0,55)+'...' : p;
+    }
+
+    // Calc streak
+    const all = await supaFetch('journal','GET',null,'?order=date.desc&limit=30')||[];
+    const withText = all.filter(e=>e.entry?.trim());
+    const streak = calcJournalStreak(withText);
+    if(streakEl) streakEl.textContent = streak+' day streak';
+
+    // If journal hero is active, re-render
+    if(typeof currentHero!=='undefined' && currentHero==='habits') setHero('habits');
+  } catch(e) { console.log('Journal home load error:', e); }
+}
+
+async function loadJournalForHome() {
+  try {
+    const now = new Date();
+    const todayStr = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+    const rows = await supaFetch('journal','GET',null,`?date=eq.${todayStr}`);
+    const entry = rows?.[0];
+    window._journalPrompt = entry?.prompt || '';
+    window._journalWritten = !!(entry?.entry?.trim());
+    const promptEl = document.getElementById('home-journal-prompt');
+    const streakEl = document.getElementById('home-journal-streak');
+    if(promptEl && entry?.prompt) {
+      const p = entry.prompt;
+      promptEl.textContent = p.length>55 ? p.slice(0,55)+'...' : p;
+    }
+    const all = await supaFetch('journal','GET',null,'?order=date.desc&limit=30')||[];
+    const withText = all.filter(e=>e.entry?.trim());
+    const streak = calcJournalStreak(withText);
+    if(streakEl) streakEl.textContent = streak+' day streak';
+    if(typeof currentHero!=='undefined' && currentHero==='habits') setHero('habits');
+  } catch(e) { console.log('Journal home load error:', e); }
+}
 
 async function initJournal() {
   const now = new Date();
