@@ -374,6 +374,8 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
 .btn.green-btn:hover{background:var(--green);color:var(--bg)}
 .priority-select{background:rgba(0,245,255,0.04);border:1px solid var(--card-border);color:var(--text-secondary);font-family:'Share Tech Mono',monospace;font-size:10px;padding:10px 8px;border-radius:3px;outline:none;cursor:pointer}
 .todo-list{display:flex;flex-direction:column;gap:6px}
+.day-pill{background:transparent;border:1px solid rgba(0,245,255,0.2);color:rgba(0,245,255,0.35);font-family:'Orbitron',monospace;font-size:7px;font-weight:700;letter-spacing:0.15em;padding:6px 10px;cursor:pointer;border-radius:3px;transition:all .2s}
+.day-pill.active{background:rgba(0,245,255,0.15);border-color:var(--cyan);color:var(--cyan)}
 .todo-filter-btn{background:transparent;border:1px solid var(--card-border);color:var(--text-muted);font-family:'Orbitron',monospace;font-size:7px;font-weight:700;letter-spacing:0.18em;padding:5px 10px;cursor:pointer;border-radius:2px;transition:all .2s;white-space:nowrap}
 .todo-filter-btn:hover{border-color:var(--cyan);color:var(--cyan)}
 .todo-filter-btn.active{border-color:var(--cyan);color:var(--cyan);background:rgba(0,245,255,0.08)}
@@ -3266,18 +3268,31 @@ let currentTaskType = 'ongoing';
 
 function setTaskType(type) {
   currentTaskType = type;
-  const onBtn = document.getElementById('ttype-ongoing');
-  const scBtn = document.getElementById('ttype-scheduled');
+  ['ongoing','scheduled','recurring'].forEach(t => {
+    const btn = document.getElementById('ttype-'+t);
+    if(btn) {
+      btn.style.background = type===t ? 'rgba(0,245,255,0.12)' : 'transparent';
+      btn.style.color = type===t ? '#00f5ff' : 'rgba(0,245,255,0.35)';
+    }
+  });
   const dateRow = document.getElementById('todo-modal-date-row');
-  if(onBtn) {
-    onBtn.style.background = type==='ongoing' ? 'rgba(0,245,255,0.12)' : 'transparent';
-    onBtn.style.color = type==='ongoing' ? '#00f5ff' : 'rgba(0,245,255,0.35)';
-  }
-  if(scBtn) {
-    scBtn.style.background = type==='scheduled' ? 'rgba(0,245,255,0.12)' : 'transparent';
-    scBtn.style.color = type==='scheduled' ? '#00f5ff' : 'rgba(0,245,255,0.35)';
-  }
+  const recurRow = document.getElementById('todo-modal-recurring-row');
   if(dateRow) dateRow.style.display = type==='scheduled' ? '' : 'none';
+  if(recurRow) recurRow.style.display = type==='recurring' ? '' : 'none';
+}
+
+function toggleRecurDay(el) {
+  el.classList.toggle('active');
+}
+
+function getSelectedRecurDays() {
+  return [...document.querySelectorAll('.day-pill.active')].map(b => parseInt(b.getAttribute('data-day')));
+}
+
+function setRecurDayPills(days) {
+  document.querySelectorAll('.day-pill').forEach(b => {
+    b.classList.toggle('active', (days||[]).includes(parseInt(b.getAttribute('data-day'))));
+  });
 }
 
 function openTodoModal(id) {
@@ -3294,6 +3309,7 @@ function openTodoModal(id) {
     document.getElementById('todo-modal-cat').value = t.category||'';
     document.getElementById('todo-modal-due').value = t.scheduled_date||t.due_date||'';
     setTaskType(t.task_type||'ongoing');
+    setRecurDayPills(t.recurring_days||[]);
     if(title) title.textContent = 'EDIT TASK';
     if(saveBtn) saveBtn.textContent = 'SAVE CHANGES';
   } else {
@@ -3302,6 +3318,7 @@ function openTodoModal(id) {
     document.getElementById('todo-modal-cat').value = '';
     document.getElementById('todo-modal-due').value = '';
     setTaskType('ongoing');
+    setRecurDayPills([]);
     if(title) title.textContent = 'NEW TASK';
     if(saveBtn) saveBtn.textContent = 'ADD TASK';
   }
@@ -3333,7 +3350,8 @@ async function saveTodoModal() {
     } else {
       // Use direct fetch for more control
       const scheduled_date = currentTaskType === 'scheduled' ? (document.getElementById('todo-modal-due')?.value || null) : null;
-      const body = {text, priority, category, done: false, task_type: currentTaskType, scheduled_date};
+      const recurring_days = currentTaskType === 'recurring' ? getSelectedRecurDays() : [];
+      const body = {text, priority, category, done: false, task_type: currentTaskType, scheduled_date, recurring_days};
       const r = await fetch(SUPA_URL+'/rest/v1/todos', {
         method:'POST',
         headers:{
@@ -3446,14 +3464,24 @@ function renderTodos() {
   const today = new Date().toISOString().slice(0,10);
   const sortMode = document.getElementById('todo-sort')?.value || 'created';
   let filtered = todos.filter(t => {
-    // Scheduled tasks only show on their scheduled date (or if viewing ALL explicitly)
+    const todayDow = new Date(today+'T12:00:00').getDay(); // 0=Sun
+    // Recurring tasks only show on their selected days
+    if(t.task_type === 'recurring' && !t.done) {
+      const days = t.recurring_days || [];
+      if(!days.includes(todayDow) && todoFilter !== 'all') return false;
+    }
+    // Scheduled tasks only show on their scheduled date
     if(t.task_type === 'scheduled' && t.scheduled_date && !t.done) {
       if(t.scheduled_date !== today && todoFilter !== 'all') return false;
-      if(t.scheduled_date !== today && todoFilter === 'all') return true; // show in ALL view
     }
     if(todoFilter==='active') return !t.done;
     if(todoFilter==='done') return t.done;
-    if(todoFilter==='today') return !t.done && (t.task_type!=='scheduled' || t.scheduled_date===today);
+    if(todoFilter==='today') {
+      if(t.done) return false;
+      if(t.task_type==='scheduled') return t.scheduled_date===today;
+      if(t.task_type==='recurring') return (t.recurring_days||[]).includes(todayDow);
+      return true; // ongoing
+    }
     return true;
   });
   if(todoCatFilter) filtered = filtered.filter(t=>t.category===todoCatFilter);
@@ -3485,11 +3513,15 @@ function renderTodos() {
     const dueToday = t.due_date === today && !t.done;
     const schedDate = t.scheduled_date;
     const isScheduled = t.task_type === 'scheduled';
+    const isRecurring = t.task_type === 'recurring';
+    const DAY_SHORT = ['Su','M','Tu','W','Th','F','Sa'];
     const schedToday = schedDate === today;
     const schedTomorrow = schedDate === new Date(Date.now()+86400000).toISOString().slice(0,10);
-    const dueDateStr = isScheduled && schedDate
-      ? `<span style="font-size:8px;letter-spacing:0.1em;color:${schedToday?'var(--yellow)':schedTomorrow?'var(--orange)':'var(--cyan-dim)'};margin-left:6px">📅 ${schedToday?'TODAY':schedTomorrow?'TOMORROW':schedDate}</span>`
-      : t.due_date ? `<span style="font-size:8px;letter-spacing:0.1em;color:${overdue?'var(--red)':dueToday?'var(--yellow)':'var(--text-muted)'};margin-left:6px">${overdue?'OVERDUE':dueToday?'TODAY':t.due_date}</span>` : '';
+    const dueDateStr = isRecurring
+      ? `<span style="font-size:8px;letter-spacing:0.08em;color:var(--orange);margin-left:6px">↻ ${(t.recurring_days||[]).map(d=>DAY_SHORT[d]).join(' · ')}</span>`
+      : isScheduled && schedDate
+        ? `<span style="font-size:8px;letter-spacing:0.1em;color:${schedToday?'var(--yellow)':schedTomorrow?'var(--orange)':'var(--cyan-dim)'};margin-left:6px">📅 ${schedToday?'TODAY':schedTomorrow?'TOMORROW':schedDate}</span>`
+        : t.due_date ? `<span style="font-size:8px;letter-spacing:0.1em;color:${overdue?'var(--red)':dueToday?'var(--yellow)':'var(--text-muted)'};margin-left:6px">${overdue?'OVERDUE':dueToday?'TODAY':t.due_date}</span>` : '';
     const catStr = t.category ? `<span style="font-size:7px;letter-spacing:0.12em;padding:2px 6px;background:rgba(0,245,255,0.06);border:1px solid var(--card-border);color:var(--text-muted);border-radius:10px">${t.category.toUpperCase()}</span>` : '';
     return `<div class="todo-item ${t.done?'done':''}" id="todo-item-${t.id}">
       <div class="todo-check-wrap">
@@ -3929,6 +3961,7 @@ async function fetchWeather() {
         <div style="display:flex;gap:0;border:1px solid rgba(0,245,255,0.2);border-radius:3px;overflow:hidden">
           <button id="ttype-ongoing" onclick="setTaskType('ongoing')" style="flex:1;padding:10px;font-family:Orbitron,monospace;font-size:8px;font-weight:700;letter-spacing:0.15em;cursor:pointer;background:rgba(0,245,255,0.12);border:none;color:#00f5ff;transition:all .2s">ONGOING</button>
           <button id="ttype-scheduled" onclick="setTaskType('scheduled')" style="flex:1;padding:10px;font-family:Orbitron,monospace;font-size:8px;font-weight:700;letter-spacing:0.15em;cursor:pointer;background:transparent;border:none;color:rgba(0,245,255,0.35);transition:all .2s">SCHEDULED</button>
+          <button id="ttype-recurring" onclick="setTaskType('recurring')" style="flex:1;padding:10px;font-family:Orbitron,monospace;font-size:8px;font-weight:700;letter-spacing:0.15em;cursor:pointer;background:transparent;border:none;color:rgba(0,245,255,0.35);transition:all .2s">RECURRING</button>
         </div>
       </div>
       <!-- Scheduled date (only shown for scheduled type) -->
@@ -3936,6 +3969,20 @@ async function fetchWeather() {
         <div style="font-size:8px;letter-spacing:.22em;color:rgba(0,245,255,0.28);margin-bottom:6px">SCHEDULED DATE</div>
         <input id="todo-modal-due" type="date" style="width:100%;background:rgba(0,245,255,0.04);border:1px solid rgba(0,245,255,0.12);color:#e0f8ff;font-family:'Share Tech Mono',monospace;font-size:12px;padding:10px 12px;border-radius:3px;outline:none;color-scheme:dark">
         <div style="font-size:8px;color:rgba(0,245,255,0.3);margin-top:5px;letter-spacing:0.1em">Task will appear on this date and remind you the day before in your briefing</div>
+      </div>
+      <!-- Recurring days picker -->
+      <div id="todo-modal-recurring-row" style="display:none">
+        <div style="font-size:8px;letter-spacing:.22em;color:rgba(0,245,255,0.28);margin-bottom:8px">REPEAT ON</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="day-pill" data-day="0" onclick="toggleRecurDay(this)">SUN</button>
+          <button class="day-pill" data-day="1" onclick="toggleRecurDay(this)">MON</button>
+          <button class="day-pill" data-day="2" onclick="toggleRecurDay(this)">TUE</button>
+          <button class="day-pill" data-day="3" onclick="toggleRecurDay(this)">WED</button>
+          <button class="day-pill" data-day="4" onclick="toggleRecurDay(this)">THU</button>
+          <button class="day-pill" data-day="5" onclick="toggleRecurDay(this)">FRI</button>
+          <button class="day-pill" data-day="6" onclick="toggleRecurDay(this)">SAT</button>
+        </div>
+        <div style="font-size:8px;color:rgba(0,245,255,0.3);margin-top:6px;letter-spacing:0.1em">Task appears automatically on selected days each week</div>
       </div>
       <button id="todo-modal-save" onclick="saveTodoModal()" style="width:100%;background:transparent;border:1px solid #00f5ff;color:#00f5ff;font-family:Orbitron,monospace;font-size:10px;font-weight:700;letter-spacing:0.2em;padding:14px;cursor:pointer;border-radius:2px;margin-top:4px;transition:background .2s" onmouseover="this.style.background='#00f5ff';this.style.color='#010a0f'" onmouseout="this.style.background='transparent';this.style.color='#00f5ff'">ADD TASK</button>
     </div>
