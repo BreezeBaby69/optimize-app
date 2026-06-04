@@ -3068,16 +3068,18 @@ function miniBarChart(pts, color, h=60) {
   if(!pts.length) return '<div style="font-size:9px;color:var(--text-muted);letter-spacing:.15em;padding:8px 0">NO DATA</div>';
   const max = Math.max(...pts.map(p=>p.v),1);
   const n = pts.length;
-  const barW = 28, gap = 6, totalW = n*(barW+gap)-gap;
+  const gapPct = 1.5; // gap as % of total width
+  const totalGap = gapPct * (n-1);
+  const barW = (100 - totalGap) / n;
   const bars = pts.map((p,i)=>{
     const barH = Math.max(3, Math.round((p.v/max)*h));
     const col = p.col||color;
-    const x = i*(barW+gap);
-    return `<rect x="${x}" y="${h-barH}" width="${barW}" height="${barH}" fill="${col}" rx="3" opacity="0.75"/>
-    <text x="${x+barW/2}" y="${h+13}" text-anchor="middle" font-size="8" fill="rgba(0,245,255,0.3)" font-family="Share Tech Mono">${p.lbl||''}</text>
-    <text x="${x+barW/2}" y="${h-barH-4}" text-anchor="middle" font-size="8" fill="${col}" font-family="Share Tech Mono" opacity="0.8">${p.v||''}</text>`;
+    const x = i*(barW+gapPct);
+    return `<rect x="${x.toFixed(2)}%" y="${h-barH}" width="${barW.toFixed(2)}%" height="${barH}" fill="${col}" rx="3" opacity="0.75"/>
+    <text x="${(x+barW/2).toFixed(2)}%" y="${h+13}" text-anchor="middle" font-size="8" fill="rgba(0,245,255,0.3)" font-family="Share Tech Mono">${p.lbl||''}</text>
+    <text x="${(x+barW/2).toFixed(2)}%" y="${h-barH-4}" text-anchor="middle" font-size="8" fill="${col}" font-family="Share Tech Mono" opacity="0.8">${p.v||''}</text>`;
   }).join('');
-  return `<svg width="100%" height="${h+20}" viewBox="0 0 ${totalW} ${h+20}" preserveAspectRatio="xMidYMid meet" style="overflow:visible">${bars}</svg>`;
+  return `<svg width="100%" height="${h+20}" style="overflow:visible;display:block">${bars}</svg>`;
 }
 
 // ── HELPER: mini SVG line chart ──
@@ -3101,10 +3103,18 @@ async function renderHeroHealth(el, color) {
   el.innerHTML = heroHeader('SLEEP // RECOVERY & BODY', color) +
     `<div style="font-size:9px;color:${color}55;letter-spacing:.15em">LOADING...</div>`;
 
-  const [sleepLogs, weightLogs] = await Promise.all([
+  const [sleepLogs, weightLogs1, weightLogs2] = await Promise.all([
     supaFetch('health_metrics','GET',null,'?order=date.desc&limit=7'),
-    supaFetch('weight_log','GET',null,'?order=date.desc&limit=14')
+    supaFetch('weight_log','GET',null,'?order=date.desc&limit=14'),
+    supaFetch('body_weight_logs','GET',null,'?order=date.desc&limit=14')
   ]);
+  // Merge both weight tables, dedupe by date, sort desc
+  const allWeights = [
+    ...(weightLogs1||[]).map(w=>({date:w.date,weight_lbs:w.weight_lbs})),
+    ...(weightLogs2||[]).map(w=>({date:w.date,weight_lbs:w.weight_lbs}))
+  ].sort((a,b)=>b.date.localeCompare(a.date));
+  const seenDates = new Set();
+  const weightLogs = allWeights.filter(w=>{ if(seenDates.has(w.date))return false; seenDates.add(w.date); return true; });
 
   const DAYS=['Su','M','Tu','W','Th','F','Sa'];
   const sleep7 = [...(sleepLogs||[])].reverse();
