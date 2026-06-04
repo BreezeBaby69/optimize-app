@@ -2738,15 +2738,24 @@ async function loadSupabaseData() {
       }
     }
 
-    // Load weight from Supabase (overrides localStorage)
-    const weights = await supaGetWeight(14);
-    if (weights && weights.length > 0) {
-      weightLog = weights.map(w => ({
-        date: w.date, val: w.weight_lbs, unit: 'lbs'
-      }));
+    // Load weight — merge weight_log and body_weight_logs, use most recent
+    const [weights1, weights2] = await Promise.all([
+      supaGetWeight(14),
+      supaFetch('body_weight_logs','GET',null,'?order=date.desc&limit=14')
+    ]);
+    // Merge and sort by date desc
+    const allWeights = [
+      ...(weights1||[]).map(w=>({date:w.date, val:w.weight_lbs, unit:'lbs', src:'weight_log'})),
+      ...(weights2||[]).map(w=>({date:w.date, val:w.weight_lbs, unit:'lbs', src:'body_weight_logs'}))
+    ].sort((a,b)=>b.date.localeCompare(a.date));
+    // Dedupe by date (prefer most recent source)
+    const seen = new Set();
+    const merged = allWeights.filter(w=>{ if(seen.has(w.date))return false; seen.add(w.date); return true; });
+    if(merged.length > 0) {
+      weightLog = merged;
       store.set('weightLog', weightLog);
       const hw = document.getElementById('home-weight');
-      if (hw) hw.textContent = weights[0].weight_lbs;
+      if(hw) hw.textContent = parseFloat(merged[0].val).toFixed(1);
       renderWeightLog();
     }
   } catch(e) {
