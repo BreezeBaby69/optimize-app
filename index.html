@@ -997,8 +997,8 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
             </div>
             <div class="hc" onclick="navigateTo('health')">
               <div class="hc-label">WORKOUT</div>
-              <div style="font-size:11px;font-weight:700;color:#ff4d6d;letter-spacing:0.05em;margin:4px 0;line-height:1.2" id="home-workout">Upper Body</div>
-              <div class="hc-sub">push day</div>
+              <div style="font-size:11px;font-weight:700;color:#ff4d6d;letter-spacing:0.05em;margin:4px 0;line-height:1.2" id="home-workout">—</div>
+              <div class="hc-sub" id="home-workout-sub">today</div>
             </div>
             <div class="hc" onclick="navigateTo('budget')">
               <div class="hc-label">NET / MONTH</div>
@@ -1972,7 +1972,9 @@ async function loadBriefingWorkout() {
 
     // Update home workout tile
     const hw = document.getElementById('home-workout');
+    const hwsub = document.getElementById('home-workout-sub');
     if(hw) hw.textContent = dayName;
+    if(hwsub) hwsub.textContent = progName;
 
   } catch(e) {
     el.innerHTML = `<div class="card-heading" style="color:#ff4d6d">Workout</div><div style="font-size:9px;color:rgba(255,77,109,0.4);margin-top:12px;letter-spacing:.15em">UNABLE TO LOAD</div>`;
@@ -2784,6 +2786,7 @@ function initDashboard() {
   updateHomeSats();
   dashTick();
   loadSupabaseData();
+  loadBriefingWorkout(); // keep home workout tile live
   setInterval(dashTick, 1000);
   setInterval(updateHomeRing, 60000);
   setInterval(fetchWeather, 60 * 60 * 1000);
