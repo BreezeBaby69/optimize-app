@@ -1103,40 +1103,6 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
 
       </div>
 
-      <!-- Add/Edit Task Modal -->
-      <div class="modal-overlay" id="todo-modal" onclick="if(event.target===this)closeTodoModal()" style="display:none;position:fixed;inset:0;background:rgba(1,10,15,.88);z-index:200;align-items:flex-end;justify-content:center">
-        <div style="background:var(--card);border:1px solid var(--card-border);border-radius:8px 8px 0 0;width:100%;max-width:560px;padding:20px;padding-bottom:calc(20px + env(safe-area-inset-bottom))">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-            <div style="font-family:Orbitron,monospace;font-size:13px;font-weight:700;letter-spacing:.12em;color:var(--cyan)" id="todo-modal-title">NEW TASK</div>
-            <button onclick="closeTodoModal()" style="background:transparent;border:none;color:var(--text-muted);font-size:18px;cursor:pointer">✕</button>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:10px">
-            <div>
-              <div style="font-size:8px;letter-spacing:.22em;color:var(--text-muted);margin-bottom:5px">TASK</div>
-              <input class="todo-input" id="todo-modal-text" placeholder="What needs to be done?" style="width:100%">
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-              <div>
-                <div style="font-size:8px;letter-spacing:.22em;color:var(--text-muted);margin-bottom:5px">PRIORITY</div>
-                <select class="priority-select" id="todo-modal-priority" style="width:100%">
-                  <option value="high">HIGH</option>
-                  <option value="med" selected>MED</option>
-                  <option value="low">LOW</option>
-                </select>
-              </div>
-              <div>
-                <div style="font-size:8px;letter-spacing:.22em;color:var(--text-muted);margin-bottom:5px">CATEGORY</div>
-                <input class="todo-input" id="todo-modal-cat" placeholder="e.g. Health, Work" style="width:100%;font-size:11px">
-              </div>
-            </div>
-            <div>
-              <div style="font-size:8px;letter-spacing:.22em;color:var(--text-muted);margin-bottom:5px">DUE DATE (optional)</div>
-              <input class="todo-input" id="todo-modal-due" type="date" style="width:100%;color-scheme:dark">
-            </div>
-            <button class="btn full" onclick="saveTodoModal()" style="margin-top:4px" id="todo-modal-save">ADD TASK</button>
-          </div>
-        </div>
-      </div>
 
       <!-- ═══════════════ BUDGET ═══════════════ -->
       <div class="view" id="view-budget" style="padding:16px">
