@@ -3064,17 +3064,20 @@ function renderHeroHabits(el, color) {
 }
 
 // ── HELPER: mini SVG bar chart ──
-function miniBarChart(pts, color, h=80) {
+function miniBarChart(pts, color, h=60) {
   if(!pts.length) return '<div style="font-size:9px;color:var(--text-muted);letter-spacing:.15em;padding:8px 0">NO DATA</div>';
   const max = Math.max(...pts.map(p=>p.v),1);
-  const w = 100/pts.length;
+  const n = pts.length;
+  const barW = 28, gap = 6, totalW = n*(barW+gap)-gap;
   const bars = pts.map((p,i)=>{
-    const barH = Math.max(2, Math.round((p.v/max)*h));
+    const barH = Math.max(3, Math.round((p.v/max)*h));
     const col = p.col||color;
-    return `<rect x="${i*w+0.5}%" y="${h-barH}" width="${w-2}%" height="${barH}" fill="${col}" rx="2" opacity="0.85"/>
-    <text x="${i*w+w/2}%" y="${h+14}" text-anchor="middle" font-size="8" fill="rgba(0,245,255,0.35)" font-family="Share Tech Mono">${p.lbl||''}</text>`;
+    const x = i*(barW+gap);
+    return `<rect x="${x}" y="${h-barH}" width="${barW}" height="${barH}" fill="${col}" rx="3" opacity="0.75"/>
+    <text x="${x+barW/2}" y="${h+13}" text-anchor="middle" font-size="8" fill="rgba(0,245,255,0.3)" font-family="Share Tech Mono">${p.lbl||''}</text>
+    <text x="${x+barW/2}" y="${h-barH-4}" text-anchor="middle" font-size="8" fill="${col}" font-family="Share Tech Mono" opacity="0.8">${p.v||''}</text>`;
   }).join('');
-  return `<svg width="100%" height="${h+18}" style="overflow:visible">${bars}</svg>`;
+  return `<svg width="100%" height="${h+20}" viewBox="0 0 ${totalW} ${h+20}" preserveAspectRatio="xMidYMid meet" style="overflow:visible">${bars}</svg>`;
 }
 
 // ── HELPER: mini SVG line chart ──
