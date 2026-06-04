@@ -1106,6 +1106,32 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
         <!-- Done count -->
         <div id="todo-done-summary" style="text-align:center;font-size:8px;letter-spacing:0.2em;color:var(--text-muted);padding:12px 0"></div>
 
+        <!-- ── CALENDAR ── -->
+        <div class="card" style="margin-top:8px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <button onclick="todoCalShift(-1)" style="background:transparent;border:1px solid var(--card-border);color:var(--text-muted);width:28px;height:28px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;border-radius:3px;transition:all .2s" onmouseover="this.style.borderColor='var(--cyan)';this.style.color='var(--cyan)'" onmouseout="this.style.borderColor='var(--card-border)';this.style.color='var(--text-muted)'">←</button>
+            <div style="font-family:Orbitron,monospace;font-size:11px;font-weight:700;letter-spacing:0.15em;color:var(--cyan)" id="todo-cal-label">—</div>
+            <button onclick="todoCalShift(1)" style="background:transparent;border:1px solid var(--card-border);color:var(--text-muted);width:28px;height:28px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;border-radius:3px;transition:all .2s" onmouseover="this.style.borderColor='var(--cyan)';this.style.color='var(--cyan)'" onmouseout="this.style.borderColor='var(--card-border)';this.style.color='var(--text-muted)'">→</button>
+          </div>
+          <!-- Day headers -->
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px">
+            <div style="text-align:center;font-size:7px;letter-spacing:0.1em;color:var(--text-muted);padding:3px 0">SUN</div>
+            <div style="text-align:center;font-size:7px;letter-spacing:0.1em;color:var(--text-muted);padding:3px 0">MON</div>
+            <div style="text-align:center;font-size:7px;letter-spacing:0.1em;color:var(--text-muted);padding:3px 0">TUE</div>
+            <div style="text-align:center;font-size:7px;letter-spacing:0.1em;color:var(--text-muted);padding:3px 0">WED</div>
+            <div style="text-align:center;font-size:7px;letter-spacing:0.1em;color:var(--text-muted);padding:3px 0">THU</div>
+            <div style="text-align:center;font-size:7px;letter-spacing:0.1em;color:var(--text-muted);padding:3px 0">FRI</div>
+            <div style="text-align:center;font-size:7px;letter-spacing:0.1em;color:var(--text-muted);padding:3px 0">SAT</div>
+          </div>
+          <div id="todo-cal-days" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px"></div>
+          <!-- Selected day tasks -->
+          <div id="todo-cal-selected" style="margin-top:12px;display:none">
+            <div style="height:1px;background:var(--card-border);margin-bottom:10px"></div>
+            <div style="font-size:8px;letter-spacing:0.2em;color:var(--text-muted);margin-bottom:8px" id="todo-cal-selected-label">—</div>
+            <div id="todo-cal-tasks"></div>
+          </div>
+        </div>
+
       </div>
 
 
@@ -3487,6 +3513,107 @@ function renderTodos() {
   if(summEl) { const dc=todos.filter(t=>t.done).length; summEl.textContent = todos.length>0?`${dc} of ${todos.length} tasks complete`:''; }
   window._heroTasks = todos;
   if(typeof currentHero!=='undefined'&&currentHero==='tasks') setHero('tasks');
+  renderTodoCalendar();
+}
+
+// ── TODO CALENDAR ──
+let todoCalYear = new Date().getFullYear();
+let todoCalMonth = new Date().getMonth();
+let todoCalSelected = null;
+
+const MONTHS_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function todoCalShift(d) {
+  todoCalMonth += d;
+  if(todoCalMonth < 0) { todoCalMonth = 11; todoCalYear--; }
+  else if(todoCalMonth > 11) { todoCalMonth = 0; todoCalYear++; }
+  renderTodoCalendar();
+}
+
+function renderTodoCalendar() {
+  const label = document.getElementById('todo-cal-label');
+  const grid  = document.getElementById('todo-cal-days');
+  if(!label || !grid) return;
+
+  label.textContent = MONTHS_FULL[todoCalMonth].toUpperCase() + ' ' + todoCalYear;
+
+  const today = new Date().toISOString().slice(0,10);
+  const firstDay = new Date(todoCalYear, todoCalMonth, 1).getDay();
+  const daysInMonth = new Date(todoCalYear, todoCalMonth+1, 0).getDate();
+  const prevDays = new Date(todoCalYear, todoCalMonth, 0).getDate();
+
+  // Build set of scheduled task dates this month
+  const scheduledDates = {};
+  todos.forEach(t => {
+    if(t.task_type === 'scheduled' && t.scheduled_date && !t.done) {
+      const d = t.scheduled_date;
+      if(d.startsWith(`${todoCalYear}-${String(todoCalMonth+1).padStart(2,'0')}`)) {
+        scheduledDates[d] = (scheduledDates[d] || 0) + 1;
+      }
+    }
+  });
+
+  let cells = '';
+  // Prev month filler
+  for(let i = 0; i < firstDay; i++) {
+    cells += `<div style="text-align:center;padding:6px 2px;font-size:11px;color:rgba(0,245,255,0.1);border-radius:3px">${prevDays - firstDay + i + 1}</div>`;
+  }
+  // Current month days
+  for(let i = 1; i <= daysInMonth; i++) {
+    const ds = `${todoCalYear}-${String(todoCalMonth+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+    const isToday = ds === today;
+    const isSel = ds === todoCalSelected;
+    const hasTask = scheduledDates[ds];
+    const taskCount = hasTask || 0;
+    cells += `<div onclick="todoCalSelectDay('${ds}')" style="
+      text-align:center;padding:6px 2px;border-radius:3px;cursor:pointer;position:relative;transition:all .15s;
+      font-family:${isToday||isSel?'Orbitron,monospace':'Share Tech Mono,monospace'};
+      font-size:${isToday||isSel?'10':'11'}px;font-weight:${isToday||isSel?'700':'400'};
+      color:${isSel?'var(--bg)':isToday?'var(--cyan)':hasTask?'var(--yellow)':'var(--text-muted)'};
+      background:${isSel?'var(--cyan)':isToday?'rgba(0,245,255,0.1)':'transparent'};
+      border:${isToday&&!isSel?'1px solid rgba(0,245,255,0.3)':'1px solid transparent'}
+    " onmouseover="this.style.background=this.style.background||'rgba(0,245,255,0.06)'" onmouseout="">
+      ${i}${taskCount ? `<div style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:${Math.min(taskCount,3)*3}px;height:3px;background:var(--yellow);border-radius:2px;box-shadow:0 0 4px var(--yellow)"></div>` : ''}
+    </div>`;
+  }
+  grid.innerHTML = cells;
+
+  // Show selected day tasks
+  if(todoCalSelected) {
+    todoCalShowDay(todoCalSelected);
+  }
+}
+
+function todoCalSelectDay(ds) {
+  todoCalSelected = todoCalSelected === ds ? null : ds;
+  renderTodoCalendar();
+}
+
+function todoCalShowDay(ds) {
+  const panel = document.getElementById('todo-cal-selected');
+  const lbl   = document.getElementById('todo-cal-selected-label');
+  const list  = document.getElementById('todo-cal-tasks');
+  if(!panel || !list) return;
+
+  const dayTasks = todos.filter(t => t.scheduled_date === ds && !t.done);
+  const dt = new Date(ds + 'T12:00:00');
+  const dayStr = ['SUN','MON','TUE','WED','THU','FRI','SAT'][dt.getDay()] + ' · ' +
+    MONTHS_FULL[dt.getMonth()].slice(0,3).toUpperCase() + ' ' + dt.getDate();
+
+  lbl.textContent = dayStr;
+  panel.style.display = '';
+
+  if(!dayTasks.length) {
+    list.innerHTML = '<div style="font-size:9px;color:var(--text-muted);letter-spacing:0.15em">NO SCHEDULED TASKS</div>';
+    return;
+  }
+  list.innerHTML = dayTasks.map(t => `
+    <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(0,245,255,0.05)">
+      <div style="width:10px;height:10px;border:1.5px solid rgba(255,215,0,0.4);border-radius:2px;flex-shrink:0"></div>
+      <div style="flex:1;font-size:11px;color:var(--text)">${t.text}</div>
+      <span style="font-size:7px;letter-spacing:0.1em;padding:2px 6px;border:1px solid ${t.priority==='high'?'rgba(255,59,92,0.4)':t.priority==='low'?'rgba(0,255,136,0.3)':'rgba(255,215,0,0.3)'};color:${t.priority==='high'?'var(--red)':t.priority==='low'?'var(--green)':'var(--yellow)'};border-radius:2px">${t.priority?.toUpperCase()}</span>
+      <button onclick="openTodoModal('${t.id}')" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:12px;padding:2px 4px">✎</button>
+    </div>`).join('');
 }
 
 function updateBadge() {
