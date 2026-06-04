@@ -3214,13 +3214,14 @@ const PRIORITY_LABELS = {high:'HIGH', med:'MED', low:'LOW'};
 
 async function loadTodosFromSupabase() {
   try {
-    const migrated = localStorage.getItem('opt_todos_migrated');
-    if(!migrated) {
+    // Migration: only run if Supabase has no todos yet (safer than localStorage flag)
+    const existing = await supaFetch('todos','GET',null,'?limit=1') || [];
+    if(existing.length === 0) {
+      // Only migrate if Supabase is completely empty
       const oldTodos = JSON.parse(localStorage.getItem('opt_todos') || '[]');
       for(const t of oldTodos.filter(t=>t.text)) {
         await supaFetch('todos','POST',{text:t.text,priority:t.priority||'med',category:'',done:t.done||false});
       }
-      localStorage.setItem('opt_todos_migrated','1');
     }
     const rows = await supaFetch('todos','GET',null,'?done=eq.false&order=created_at.desc') || [];
     const done = await supaFetch('todos','GET',null,'?done=eq.true&order=done_at.desc&limit=20') || [];
