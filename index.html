@@ -3684,5 +3684,40 @@ async function fetchWeather() {
 // ── INIT ──
 // Init called by initDashboard()
 </script>
+<!-- ═══ TODO MODAL ═══ -->
+<div id="todo-modal" onclick="if(event.target===this)closeTodoModal()" style="display:none;position:fixed;inset:0;background:rgba(1,10,15,.9);z-index:9999;align-items:flex-end;justify-content:center">
+  <div style="background:#061a26;border:1px solid rgba(0,245,255,0.2);border-top:2px solid #00f5ff;border-radius:8px 8px 0 0;width:100%;max-width:600px;padding:20px;padding-bottom:calc(20px + env(safe-area-inset-bottom));max-height:85vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="font-family:Orbitron,monospace;font-size:13px;font-weight:700;letter-spacing:.12em;color:#00f5ff" id="todo-modal-title">NEW TASK</div>
+      <button onclick="closeTodoModal()" style="background:transparent;border:none;color:rgba(0,245,255,0.3);font-size:22px;cursor:pointer;line-height:1;padding:0 4px">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div>
+        <div style="font-size:8px;letter-spacing:.22em;color:rgba(0,245,255,0.28);margin-bottom:6px">TASK</div>
+        <input id="todo-modal-text" placeholder="What needs to be done?" onkeydown="if(event.key==='Enter')saveTodoModal()" style="width:100%;background:rgba(0,245,255,0.04);border:1px solid rgba(0,245,255,0.12);color:#e0f8ff;font-family:'Share Tech Mono',monospace;font-size:13px;padding:10px 12px;border-radius:3px;outline:none">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <div style="font-size:8px;letter-spacing:.22em;color:rgba(0,245,255,0.28);margin-bottom:6px">PRIORITY</div>
+          <select id="todo-modal-priority" style="width:100%;background:#061a26;border:1px solid rgba(0,245,255,0.12);color:#e0f8ff;font-family:'Share Tech Mono',monospace;font-size:11px;padding:9px 10px;border-radius:3px;outline:none;cursor:pointer">
+            <option value="high">HIGH</option>
+            <option value="med" selected>MED</option>
+            <option value="low">LOW</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:8px;letter-spacing:.22em;color:rgba(0,245,255,0.28);margin-bottom:6px">CATEGORY</div>
+          <input id="todo-modal-cat" placeholder="e.g. Health, Work" style="width:100%;background:rgba(0,245,255,0.04);border:1px solid rgba(0,245,255,0.12);color:#e0f8ff;font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px 12px;border-radius:3px;outline:none">
+        </div>
+      </div>
+      <div>
+        <div style="font-size:8px;letter-spacing:.22em;color:rgba(0,245,255,0.28);margin-bottom:6px">DUE DATE (optional)</div>
+        <input id="todo-modal-due" type="date" style="width:100%;background:rgba(0,245,255,0.04);border:1px solid rgba(0,245,255,0.12);color:#e0f8ff;font-family:'Share Tech Mono',monospace;font-size:12px;padding:10px 12px;border-radius:3px;outline:none;color-scheme:dark">
+      </div>
+      <button id="todo-modal-save" onclick="saveTodoModal()" style="width:100%;background:transparent;border:1px solid #00f5ff;color:#00f5ff;font-family:Orbitron,monospace;font-size:10px;font-weight:700;letter-spacing:0.2em;padding:14px;cursor:pointer;border-radius:2px;margin-top:4px;transition:background .2s" onmouseover="this.style.background='#00f5ff';this.style.color='#010a0f'" onmouseout="this.style.background='transparent';this.style.color='#00f5ff'">ADD TASK</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
