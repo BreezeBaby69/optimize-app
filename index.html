@@ -39,7 +39,7 @@
   --card-border-hover: rgba(0,245,255,0.30);
   --sidebar-w: 220px;
   --topbar-h: 56px;
-  --mobile-bar: 64px;
+  --mobile-bar: 54px;
   --text-primary: #e0f8ff;
   --text-secondary: rgba(0,245,255,0.55);
   --text-muted: rgba(0,245,255,0.28);
@@ -77,12 +77,12 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
 /* Briefing screen top bar */
 #hud-top {
   padding-top: env(safe-area-inset-top);
-  height: calc(52px + env(safe-area-inset-top)) !important;
+  height: calc(48px + env(safe-area-inset-top)) !important;
   align-items: flex-end;
   padding-bottom: 10px;
 }
 #card-counter {
-  top: calc(60px + env(safe-area-inset-top)) !important;
+  top: calc(52px + env(safe-area-inset-top)) !important;
 }
 #progress-dots {
   bottom: calc(32px + env(safe-area-inset-bottom)) !important;
@@ -488,11 +488,19 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
   #sidebar{display:none}
   .topbar-logo{width:auto;border-right:none}
   #mobile-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:rgba(3,15,24,0.98);border-top:1px solid var(--card-border);z-index:100;height:var(--mobile-bar);align-items:stretch}
-  .mob-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;border-top:2px solid transparent;transition:background .2s}
+  .mob-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;border-top:2px solid transparent;transition:background .2s}
   .mob-nav-item.active{border-top-color:var(--cyan);background:rgba(0,245,255,0.06)}
-  .mob-nav-item .mob-icon{font-size:18px}
+  .mob-nav-item .mob-icon{font-size:16px}
   .mob-nav-item .mob-label{font-size:7px;letter-spacing:0.12em;color:var(--text-muted);text-transform:uppercase}
   .mob-nav-item.active .mob-label{color:var(--cyan)}
+  #view-home{padding:8px!important;gap:6px!important}
+  .hc{padding:8px 10px}
+  .hc-val{font-size:18px}
+  .page-title{font-size:16px!important}
+  .page-sub{margin-bottom:12px!important}
+  .card{padding:12px;margin-bottom:8px}
+  #home-greeting{font-size:16px!important}
+  #home-date{font-size:8px!important}
   #main{padding-bottom:var(--mobile-bar)}
   .view{padding:16px}
   .topbar-status{display:none}
@@ -662,7 +670,7 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
 .hc::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,var(--cyan),transparent); opacity:.15; }
 .hc:hover { border-color:var(--card-border-hover); }
 .hc-label { font-size:7px; letter-spacing:0.3em; color:var(--text-muted); margin-bottom:4px; }
-.home-tile{background:var(--card);border:1px solid var(--card-border);border-radius:4px;padding:10px 12px;cursor:pointer;transition:border-color .2s,background .2s;border-left:2px solid transparent}
+.home-tile{background:var(--card);border:1px solid var(--card-border);border-radius:4px;padding:8px 10px;cursor:pointer;transition:border-color .2s,background .2s;border-left:2px solid transparent}
 .home-tile:hover{background:rgba(0,245,255,0.03)}
 .home-tile.active{background:rgba(0,245,255,0.04)}
 @keyframes heroFade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
@@ -938,7 +946,7 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
       </nav>
       <main id="main">
         <!-- ═══════════════ HOME ═══════════════ -->
-      <div class="view active" id="view-home" style="padding:14px;display:flex;flex-direction:column;gap:10px;">
+      <div class="view active" id="view-home" style="padding:10px;display:flex;flex-direction:column;gap:8px;">
 
         <!-- ── GREETING + WEATHER ROW ── -->
         <div style="display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
@@ -966,7 +974,7 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
         </div>
 
         <!-- ── DYNAMIC HERO CARD ── -->
-        <div id="home-hero" style="background:var(--card);border:1px solid var(--card-border);border-radius:6px;padding:0;position:relative;overflow:hidden;flex-shrink:0;min-height:160px;transition:border-color .3s">
+        <div id="home-hero" style="background:var(--card);border:1px solid var(--card-border);border-radius:6px;padding:0;position:relative;overflow:hidden;flex-shrink:0;min-height:140px;transition:border-color .3s">
           <div style="position:absolute;top:0;left:0;right:0;height:2px" id="hero-accent-line"></div>
           <!-- Ring -->
           <div style="position:absolute;right:-30px;top:50%;transform:translateY(-50%);pointer-events:none">
