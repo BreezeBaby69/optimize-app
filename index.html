@@ -3183,23 +3183,115 @@ const store = {
 };
 
 // ── TO-DO ──
-let todos = store.get('todos') || [
-  { id:1, text:'Check in with physio re: shoulder', priority:'high', done:false },
-  { id:2, text:'Read 20 pages of Atomic Habits', priority:'med', done:false },
-  { id:3, text:'Review monthly budget', priority:'med', done:false },
-];
+let todos = [];
 let todoFilter = 'all';
+let todoCatFilter = '';
+let focusModeOn = false;
+let editingTodoId = null;
 
-function saveTodos() { store.set('todos', todos); updateBadge(); renderHomeTodos(); }
+const PRIORITY_ORDER = {high:0, med:1, low:2};
+const PRIORITY_COLORS = {high:'var(--red)', med:'var(--yellow)', low:'var(--green)'};
+const PRIORITY_LABELS = {high:'HIGH', med:'MED', low:'LOW'};
 
-function addTodo() {
-  const input = document.getElementById('new-todo');
-  const priority = document.getElementById('todo-priority').value;
-  const text = input.value.trim();
-  if (!text) return;
-  todos.unshift({ id: Date.now(), text, priority, done: false });
-  input.value = '';
-  saveTodos(); renderTodos();
+async function loadTodosFromSupabase() {
+  try {
+    const migrated = localStorage.getItem('opt_todos_migrated');
+    if(!migrated) {
+      const oldTodos = JSON.parse(localStorage.getItem('opt_todos') || '[]');
+      for(const t of oldTodos.filter(t=>t.text)) {
+        await supaFetch('todos','POST',{text:t.text,priority:t.priority||'med',category:'',done:t.done||false});
+      }
+      localStorage.setItem('opt_todos_migrated','1');
+    }
+    const rows = await supaFetch('todos','GET',null,'?done=eq.false&order=created_at.desc') || [];
+    const done = await supaFetch('todos','GET',null,'?done=eq.true&order=done_at.desc&limit=20') || [];
+    todos = [...rows, ...done];
+    renderTodos();
+    updateBadge();
+  } catch(e) { console.log('Todo load error:', e); todos=[]; renderTodos(); }
+}
+
+function openTodoModal(id) {
+  editingTodoId = id || null;
+  const modal = document.getElementById('todo-modal');
+  if(!modal) return;
+  const title = document.getElementById('todo-modal-title');
+  const saveBtn = document.getElementById('todo-modal-save');
+  if(id) {
+    const t = todos.find(t=>t.id===id);
+    if(!t) return;
+    document.getElementById('todo-modal-text').value = t.text;
+    document.getElementById('todo-modal-priority').value = t.priority||'med';
+    document.getElementById('todo-modal-cat').value = t.category||'';
+    document.getElementById('todo-modal-due').value = t.due_date||'';
+    if(title) title.textContent = 'EDIT TASK';
+    if(saveBtn) saveBtn.textContent = 'SAVE CHANGES';
+  } else {
+    document.getElementById('todo-modal-text').value = '';
+    document.getElementById('todo-modal-priority').value = 'med';
+    document.getElementById('todo-modal-cat').value = '';
+    document.getElementById('todo-modal-due').value = '';
+    if(title) title.textContent = 'NEW TASK';
+    if(saveBtn) saveBtn.textContent = 'ADD TASK';
+  }
+  modal.style.display = 'flex';
+  modal.style.alignItems = 'flex-end';
+  modal.style.justifyContent = 'center';
+  setTimeout(()=>document.getElementById('todo-modal-text')?.focus(), 150);
+}
+
+function closeTodoModal() {
+  const modal = document.getElementById('todo-modal');
+  if(modal) modal.style.display = 'none';
+  editingTodoId = null;
+}
+
+async function saveTodoModal() {
+  const text = document.getElementById('todo-modal-text')?.value.trim();
+  if(!text) return;
+  const priority = document.getElementById('todo-modal-priority')?.value || 'med';
+  const category = document.getElementById('todo-modal-cat')?.value.trim() || '';
+  const due_date = document.getElementById('todo-modal-due')?.value || null;
+  if(editingTodoId) {
+    await supaFetch('todos','PATCH',{text,priority,category,due_date},`?id=eq.${editingTodoId}`);
+    const idx = todos.findIndex(t=>t.id===editingTodoId);
+    if(idx>-1) todos[idx] = {...todos[idx],text,priority,category,due_date};
+  } else {
+    const res = await supaFetch('todos','POST',{text,priority,category,done:false,due_date});
+    if(res?.[0]) todos.unshift(res[0]);
+  }
+  closeTodoModal();
+  renderTodos();
+  updateBadge();
+}
+
+function saveTodos() { /* legacy compat */ }
+
+function setTodoFilter(f, el) {
+  todoFilter = f;
+  document.querySelectorAll('.todo-filter-btn').forEach(b=>b.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderTodos();
+}
+
+function toggleFocusMode() {
+  focusModeOn = !focusModeOn;
+  const btn = document.getElementById('tf-focus');
+  if(btn) btn.classList.toggle('active', focusModeOn);
+  const banner = document.getElementById('todo-focus-banner');
+  if(banner) banner.style.display = focusModeOn ? '' : 'none';
+  renderTodos();
+}
+
+function renderTodoCatFilters() {
+  const cats = [...new Set(todos.filter(t=>t.category).map(t=>t.category))];
+  const el = document.getElementById('todo-cat-filters');
+  if(!el) return;
+  if(!cats.length) { el.innerHTML=''; return; }
+  el.innerHTML = [
+    `<button class="todo-cat-pill ${!todoCatFilter?'active':''}" onclick="todoCatFilter='';this.closest('#todo-cat-filters').querySelectorAll('.todo-cat-pill').forEach(p=>p.classList.remove('active'));this.classList.add('active');renderTodos()">ALL</button>`,
+    ...cats.map(cat=>`<button class="todo-cat-pill ${todoCatFilter===cat?'active':''}" onclick="todoCatFilter='${cat}';this.closest('#todo-cat-filters').querySelectorAll('.todo-cat-pill').forEach(p=>p.classList.remove('active'));this.classList.add('active');renderTodos()">${cat.toUpperCase()}</button>`)
+  ].join('');
 }
 
 async function toggleTodo(id) {
@@ -3208,7 +3300,6 @@ async function toggleTodo(id) {
   const chk = document.getElementById('chk-' + id);
   const item = document.getElementById('todo-item-' + id);
   const wrap = chk?.closest('.todo-check-wrap');
-
   if (!t.done) {
     if (chk) {
       chk.classList.add('popping','checked');
@@ -3251,29 +3342,73 @@ async function deleteTodo(id) {
 function renderTodos() {
   const list = document.getElementById('todo-list');
   if (!list) return;
-  const filtered = todos.filter(t =>
-    todoFilter === 'all' ? true : todoFilter === 'active' ? !t.done : t.done
-  );
-  if (!filtered.length) {
-    list.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:10px;letter-spacing:0.2em;padding:24px">NO TASKS</div>';
-    return;
+  const today = new Date().toISOString().slice(0,10);
+  const sortMode = document.getElementById('todo-sort')?.value || 'created';
+  let filtered = todos.filter(t => {
+    if(todoFilter==='active') return !t.done;
+    if(todoFilter==='done') return t.done;
+    if(todoFilter==='today') return !t.done && (!t.due_date || t.due_date===today);
+    return true;
+  });
+  if(todoCatFilter) filtered = filtered.filter(t=>t.category===todoCatFilter);
+  filtered.sort((a,b) => {
+    if(a.done !== b.done) return a.done ? 1 : -1;
+    if(sortMode==='priority') return (PRIORITY_ORDER[a.priority]||1)-(PRIORITY_ORDER[b.priority]||1);
+    if(sortMode==='due') {
+      if(!a.due_date&&!b.due_date) return 0;
+      if(!a.due_date) return 1; if(!b.due_date) return -1;
+      return a.due_date.localeCompare(b.due_date);
+    }
+    return new Date(b.created_at||0)-new Date(a.created_at||0);
+  });
+  if(focusModeOn) {
+    const top3 = todos.filter(t=>!t.done).sort((a,b)=>(PRIORITY_ORDER[a.priority]||1)-(PRIORITY_ORDER[b.priority]||1)).slice(0,3);
+    const focEl = document.getElementById('todo-focus-list');
+    if(focEl) focEl.innerHTML = top3.map((t,i)=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:5px 0;${i<top3.length-1?'border-bottom:1px solid rgba(0,245,255,0.06)':''}">
+        <div style="font-family:Orbitron,monospace;font-size:11px;color:var(--cyan);min-width:16px">${i+1}</div>
+        <div style="flex:1;font-size:11px;color:var(--text)">${t.text}</div>
+        <div style="font-size:8px;letter-spacing:0.1em;color:${PRIORITY_COLORS[t.priority]}">${PRIORITY_LABELS[t.priority]}</div>
+      </div>`).join('');
   }
-  list.innerHTML = filtered.map(t => `
-    <div class="todo-item ${t.done?'done':''}" id="todo-item-${t.id}">
+  renderTodoCatFilters();
+  const active = filtered.filter(t=>!t.done);
+  const done = filtered.filter(t=>t.done);
+  const renderItem = t => {
+    const overdue = t.due_date && t.due_date < today && !t.done;
+    const dueToday = t.due_date === today && !t.done;
+    const dueDateStr = t.due_date ? `<span style="font-size:8px;letter-spacing:0.1em;color:${overdue?'var(--red)':dueToday?'var(--yellow)':'var(--text-muted)'};margin-left:6px">${overdue?'OVERDUE':dueToday?'TODAY':t.due_date}</span>` : '';
+    const catStr = t.category ? `<span style="font-size:7px;letter-spacing:0.12em;padding:2px 6px;background:rgba(0,245,255,0.06);border:1px solid var(--card-border);color:var(--text-muted);border-radius:10px">${t.category.toUpperCase()}</span>` : '';
+    return `<div class="todo-item ${t.done?'done':''}" id="todo-item-${t.id}">
       <div class="todo-check-wrap">
-        <div class="todo-check ${t.done?'checked':''}" id="chk-${t.id}" onclick="toggleTodo(${t.id})"></div>
+        <div class="todo-check ${t.done?'checked':''}" id="chk-${t.id}" onclick="toggleTodo('${t.id}')"></div>
       </div>
-      <span class="todo-text">${t.text}</span>
-      <span class="priority-tag ${t.priority}">${t.priority.toUpperCase()}</span>
-      <span class="todo-del" onclick="deleteTodo(${t.id})">✕</span>
-    </div>`).join('');
+      <div style="flex:1;min-width:0">
+        <div class="todo-text">${t.text}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap">${catStr}${dueDateStr}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+        <span class="priority-tag ${t.priority}">${PRIORITY_LABELS[t.priority]}</span>
+        <button onclick="openTodoModal('${t.id}')" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:12px;padding:2px 4px">✎</button>
+        <span class="todo-del" onclick="deleteTodo('${t.id}')">✕</span>
+      </div>
+    </div>`;
+  };
+  list.innerHTML =
+    (active.length ? active.map(renderItem).join('') : '<div style="text-align:center;padding:24px;font-size:9px;letter-spacing:0.2em;color:var(--text-muted)">NO TASKS</div>') +
+    (done.length ? `<div style="font-size:8px;letter-spacing:0.2em;color:var(--text-muted);margin:16px 0 8px;padding-left:4px">COMPLETED — ${done.length}</div>` + done.map(renderItem).join('') : '');
+  const summEl = document.getElementById('todo-done-summary');
+  if(summEl) { const dc=todos.filter(t=>t.done).length; summEl.textContent = todos.length>0?`${dc} of ${todos.length} tasks complete`:''; }
+  window._heroTasks = todos;
+  if(typeof currentHero!=='undefined'&&currentHero==='tasks') setHero('tasks');
 }
 
 function updateBadge() {
   const active = todos.filter(t => !t.done).length;
   const badge = document.getElementById('badge-todo');
   if (badge) { badge.textContent = active; badge.style.display = active ? '' : 'none'; }
-  document.getElementById('home-tasks').textContent = active;
+  const ht = document.getElementById('home-tasks');
+  if(ht) ht.textContent = active;
 }
 
 function renderHomeTodos() {
