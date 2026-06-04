@@ -795,10 +795,11 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
 
           <!-- Score drum -->
           <div style="font-size:8px;letter-spacing:0.25em;color:var(--text-muted);margin-bottom:10px">GARMIN SLEEP SCORE</div>
-          <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:10px">
-            <button class="score-arrow" ontouchstart="startScoreHold(-1)" ontouchend="stopScoreHold()" onmousedown="startScoreHold(-1)" onmouseup="stopScoreHold()" onclick="event.stopPropagation();adjustScore(-1)">−</button>
-            <div id="briefing-score-num" style="font-family:Orbitron,monospace;font-size:52px;font-weight:900;color:var(--purple);text-shadow:0 0 20px rgba(155,93,229,0.5);min-width:80px;text-align:center;line-height:1">72</div>
-            <button class="score-arrow" ontouchstart="startScoreHold(1)" ontouchend="stopScoreHold()" onmousedown="startScoreHold(1)" onmouseup="stopScoreHold()" onclick="event.stopPropagation();adjustScore(1)">+</button>
+          <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:10px;gap:4px">
+            <div style="font-size:8px;letter-spacing:0.2em;color:rgba(155,93,229,0.4)">SWIPE UP ↑ OR DOWN ↓</div>
+            <div id="briefing-score-num"
+              style="font-family:Orbitron,monospace;font-size:72px;font-weight:900;color:var(--purple);text-shadow:0 0 24px rgba(155,93,229,0.6);min-width:100px;text-align:center;line-height:1;cursor:ns-resize;user-select:none;touch-action:none;padding:8px 0"
+              onclick="event.stopPropagation()">72</div>
           </div>
           <div style="height:3px;background:rgba(155,93,229,0.1);border-radius:2px;margin-bottom:6px">
             <div id="briefing-score-bar" style="height:100%;width:72%;background:var(--purple);box-shadow:0 0 8px rgba(155,93,229,0.5);border-radius:2px;transition:width 0.15s ease"></div>
@@ -2524,6 +2525,8 @@ function initSleepCard() {
   // Build hours grid
   const grid = document.getElementById('briefing-hours-grid');
   if (!grid) return;
+  // Init drag after a tick so DOM is ready
+  setTimeout(initScoreDrag, 100);
   const options = [];
   for (let h = 4; h <= 11; h += 0.5) options.push(h);
   grid.innerHTML = options.map(h =>
@@ -2556,47 +2559,53 @@ function adjustScore(delta) {
   }
 }
 
-function startScoreHold(delta) {
-  adjustScore(delta);
-  scoreHoldInterval = setInterval(() => adjustScore(delta), 80);
-}
-function stopScoreHold() { clearInterval(scoreHoldInterval); }
+function startScoreHold(delta) {}
+function stopScoreHold() {}
 
-// Drag-to-scroll on the score number
-(function() {
+// Drag-to-scroll on the score number — attach after DOM ready
+function initScoreDrag() {
+  const el = document.getElementById('briefing-score-num');
+  if(!el || el._scoreDragInit) return;
+  el._scoreDragInit = true;
   let startY = 0, startScore = 72, dragging = false;
-  function onDown(e) {
-    dragging = true;
-    startY = e.touches ? e.touches[0].clientY : e.clientY;
-    startScore = selectedScore;
-    e.preventDefault();
-  }
-  function onMove(e) {
-    if (!dragging) return;
-    const y = e.touches ? e.touches[0].clientY : e.clientY;
-    const dy = startY - y; // drag up = increase
-    const delta = Math.round(dy / 3);
-    selectedScore = Math.max(0, Math.min(100, startScore + delta));
+
+  function updateDisplay() {
     const num = document.getElementById('briefing-score-num');
     const bar = document.getElementById('briefing-score-bar');
     const qual = document.getElementById('briefing-score-quality');
-    if (num) num.textContent = selectedScore;
-    if (bar) bar.style.width = selectedScore + '%';
-    if (qual) qual.textContent = selectedScore >= 80 ? 'EXCELLENT' : selectedScore >= 65 ? 'GOOD' : selectedScore >= 50 ? 'FAIR' : 'POOR';
-    e.preventDefault();
+    if(num) num.textContent = selectedScore;
+    if(bar) bar.style.width = selectedScore + '%';
+    if(qual) qual.textContent = selectedScore>=80?'EXCELLENT':selectedScore>=65?'GOOD':selectedScore>=50?'FAIR':'POOR';
   }
-  function onUp() { dragging = false; }
-  document.addEventListener('DOMContentLoaded', () => {
-    const el = document.getElementById('briefing-score-num');
-    if (!el) return;
-    el.addEventListener('mousedown', onDown);
-    el.addEventListener('touchstart', onDown, {passive:false});
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('touchmove', onMove, {passive:false});
-    window.addEventListener('mouseup', onUp);
-    window.addEventListener('touchend', onUp);
+
+  el.addEventListener('mousedown', e => {
+    dragging = true; startY = e.clientY; startScore = selectedScore; e.preventDefault();
   });
-})();
+  el.addEventListener('touchstart', e => {
+    dragging = true; startY = e.touches[0].clientY; startScore = selectedScore; e.preventDefault();
+  }, {passive:false});
+  window.addEventListener('mousemove', e => {
+    if(!dragging) return;
+    const delta = Math.round((startY - e.clientY) / 2.5);
+    selectedScore = Math.max(0, Math.min(100, startScore + delta));
+    updateDisplay();
+  });
+  window.addEventListener('touchmove', e => {
+    if(!dragging) return;
+    const delta = Math.round((startY - e.touches[0].clientY) / 2.5);
+    selectedScore = Math.max(0, Math.min(100, startScore + delta));
+    updateDisplay(); e.preventDefault();
+  }, {passive:false});
+  window.addEventListener('mouseup', () => { dragging = false; });
+  window.addEventListener('touchend', () => { dragging = false; });
+
+  // Also scroll wheel support on desktop
+  el.addEventListener('wheel', e => {
+    e.preventDefault();
+    selectedScore = Math.max(0, Math.min(100, selectedScore + (e.deltaY < 0 ? 1 : -1)));
+    updateDisplay();
+  }, {passive:false});
+}
 
 async function saveBriefingSleep() {
   if (!selectedHours) {
