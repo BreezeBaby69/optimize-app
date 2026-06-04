@@ -1733,6 +1733,12 @@ async function setPref(key, value) {
 }
 
 // ═══ SCREEN MANAGER ═══
+// Debug helper — call resetBriefing() in browser console to force briefing to show
+function resetBriefing() {
+  localStorage.removeItem('pref_briefing_date');
+  supaFetch('user_prefs','DELETE',null,'?key=eq.briefing_date').then(()=>console.log('Briefing reset — reload to see briefing'));
+}
+
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('visible'));
   document.getElementById(id).classList.add('visible');
@@ -1879,7 +1885,9 @@ setTimeout(glitch, 5000);
 
 // Enter system
 async function enterSystem() {
-  const todayISO = new Date().toISOString().slice(0,10);
+  // Use local date to avoid UTC timezone offset issues (Edmonton = UTC-6)
+  const now = new Date();
+  const todayISO = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
   const lastSeen = await getPref('briefing_date');
   const seenToday = lastSeen === todayISO;
   const screen = document.getElementById('screen-welcome');
@@ -2056,7 +2064,8 @@ function initBriefing() {
 }
 
 function enterDashboard() {
-  const todayISO = new Date().toISOString().slice(0,10);
+  const now2 = new Date();
+  const todayISO = now2.getFullYear()+'-'+String(now2.getMonth()+1).padStart(2,'0')+'-'+String(now2.getDate()).padStart(2,'0');
   setPref('briefing_date', todayISO); // saves to both localStorage and Supabase
   syncHabitsBack();
   const screen = document.getElementById('screen-briefing');
@@ -2595,7 +2604,8 @@ async function saveBriefingSleep() {
     if (grid) { grid.style.outline = '1px solid var(--red)'; setTimeout(() => grid.style.outline = '', 800); }
     return;
   }
-  const dateStr = new Date().toISOString().slice(0,10);
+  const _now = new Date();
+  const dateStr = _now.getFullYear()+'-'+String(_now.getMonth()+1).padStart(2,'0')+'-'+String(_now.getDate()).padStart(2,'0');
   await supaUpsertHealth({ date: dateStr, sleep_hours: selectedHours, sleep_score: selectedScore });
   localStorage.setItem('opt_sleep_logged', new Date().toDateString());
   localStorage.setItem('opt_sleep_today', JSON.stringify({ hours: selectedHours, score: selectedScore }));
