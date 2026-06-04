@@ -2054,7 +2054,7 @@ async function loadBriefingWorkout() {
 
 function initBriefing() {
   loadVerse();
-  renderBriefingTasks();
+  loadTodosFromSupabase().then(()=>renderBriefingTasks());
   renderBriefingHabits();
   renderBriefingReading();
   fetchWeatherBriefing();
@@ -2062,6 +2062,7 @@ function initBriefing() {
   updateDots();
   initSleepCard();
   loadBriefingWorkout();
+  loadBriefingReminders();
 }
 
 function enterDashboard() {
@@ -3231,6 +3232,24 @@ async function loadTodosFromSupabase() {
   } catch(e) { console.log('Todo load error:', e); todos=[]; renderTodos(); }
 }
 
+let currentTaskType = 'ongoing';
+
+function setTaskType(type) {
+  currentTaskType = type;
+  const onBtn = document.getElementById('ttype-ongoing');
+  const scBtn = document.getElementById('ttype-scheduled');
+  const dateRow = document.getElementById('todo-modal-date-row');
+  if(onBtn) {
+    onBtn.style.background = type==='ongoing' ? 'rgba(0,245,255,0.12)' : 'transparent';
+    onBtn.style.color = type==='ongoing' ? '#00f5ff' : 'rgba(0,245,255,0.35)';
+  }
+  if(scBtn) {
+    scBtn.style.background = type==='scheduled' ? 'rgba(0,245,255,0.12)' : 'transparent';
+    scBtn.style.color = type==='scheduled' ? '#00f5ff' : 'rgba(0,245,255,0.35)';
+  }
+  if(dateRow) dateRow.style.display = type==='scheduled' ? '' : 'none';
+}
+
 function openTodoModal(id) {
   editingTodoId = id || null;
   const modal = document.getElementById('todo-modal');
@@ -3243,7 +3262,8 @@ function openTodoModal(id) {
     document.getElementById('todo-modal-text').value = t.text;
     document.getElementById('todo-modal-priority').value = t.priority||'med';
     document.getElementById('todo-modal-cat').value = t.category||'';
-    document.getElementById('todo-modal-due').value = t.due_date||'';
+    document.getElementById('todo-modal-due').value = t.scheduled_date||t.due_date||'';
+    setTaskType(t.task_type||'ongoing');
     if(title) title.textContent = 'EDIT TASK';
     if(saveBtn) saveBtn.textContent = 'SAVE CHANGES';
   } else {
@@ -3251,6 +3271,7 @@ function openTodoModal(id) {
     document.getElementById('todo-modal-priority').value = 'med';
     document.getElementById('todo-modal-cat').value = '';
     document.getElementById('todo-modal-due').value = '';
+    setTaskType('ongoing');
     if(title) title.textContent = 'NEW TASK';
     if(saveBtn) saveBtn.textContent = 'ADD TASK';
   }
@@ -3281,8 +3302,8 @@ async function saveTodoModal() {
       if(idx>-1) todos[idx] = {...todos[idx],text,priority,category,due_date};
     } else {
       // Use direct fetch for more control
-      const body = {text, priority, category, done: false};
-      if(due_date) body.due_date = due_date;
+      const scheduled_date = currentTaskType === 'scheduled' ? (document.getElementById('todo-modal-due')?.value || null) : null;
+      const body = {text, priority, category, done: false, task_type: currentTaskType, scheduled_date};
       const r = await fetch(SUPA_URL+'/rest/v1/todos', {
         method:'POST',
         headers:{
@@ -3395,9 +3416,14 @@ function renderTodos() {
   const today = new Date().toISOString().slice(0,10);
   const sortMode = document.getElementById('todo-sort')?.value || 'created';
   let filtered = todos.filter(t => {
+    // Scheduled tasks only show on their scheduled date (or if viewing ALL explicitly)
+    if(t.task_type === 'scheduled' && t.scheduled_date && !t.done) {
+      if(t.scheduled_date !== today && todoFilter !== 'all') return false;
+      if(t.scheduled_date !== today && todoFilter === 'all') return true; // show in ALL view
+    }
     if(todoFilter==='active') return !t.done;
     if(todoFilter==='done') return t.done;
-    if(todoFilter==='today') return !t.done && (!t.due_date || t.due_date===today);
+    if(todoFilter==='today') return !t.done && (t.task_type!=='scheduled' || t.scheduled_date===today);
     return true;
   });
   if(todoCatFilter) filtered = filtered.filter(t=>t.category===todoCatFilter);
@@ -3427,7 +3453,13 @@ function renderTodos() {
   const renderItem = t => {
     const overdue = t.due_date && t.due_date < today && !t.done;
     const dueToday = t.due_date === today && !t.done;
-    const dueDateStr = t.due_date ? `<span style="font-size:8px;letter-spacing:0.1em;color:${overdue?'var(--red)':dueToday?'var(--yellow)':'var(--text-muted)'};margin-left:6px">${overdue?'OVERDUE':dueToday?'TODAY':t.due_date}</span>` : '';
+    const schedDate = t.scheduled_date;
+    const isScheduled = t.task_type === 'scheduled';
+    const schedToday = schedDate === today;
+    const schedTomorrow = schedDate === new Date(Date.now()+86400000).toISOString().slice(0,10);
+    const dueDateStr = isScheduled && schedDate
+      ? `<span style="font-size:8px;letter-spacing:0.1em;color:${schedToday?'var(--yellow)':schedTomorrow?'var(--orange)':'var(--cyan-dim)'};margin-left:6px">📅 ${schedToday?'TODAY':schedTomorrow?'TOMORROW':schedDate}</span>`
+      : t.due_date ? `<span style="font-size:8px;letter-spacing:0.1em;color:${overdue?'var(--red)':dueToday?'var(--yellow)':'var(--text-muted)'};margin-left:6px">${overdue?'OVERDUE':dueToday?'TODAY':t.due_date}</span>` : '';
     const catStr = t.category ? `<span style="font-size:7px;letter-spacing:0.12em;padding:2px 6px;background:rgba(0,245,255,0.06);border:1px solid var(--card-border);color:var(--text-muted);border-radius:10px">${t.category.toUpperCase()}</span>` : '';
     return `<div class="todo-item ${t.done?'done':''}" id="todo-item-${t.id}">
       <div class="todo-check-wrap">
@@ -3760,9 +3792,19 @@ async function fetchWeather() {
           <input id="todo-modal-cat" placeholder="e.g. Health, Work" style="width:100%;background:rgba(0,245,255,0.04);border:1px solid rgba(0,245,255,0.12);color:#e0f8ff;font-family:'Share Tech Mono',monospace;font-size:11px;padding:10px 12px;border-radius:3px;outline:none">
         </div>
       </div>
+      <!-- Task type toggle -->
       <div>
-        <div style="font-size:8px;letter-spacing:.22em;color:rgba(0,245,255,0.28);margin-bottom:6px">DUE DATE (optional)</div>
+        <div style="font-size:8px;letter-spacing:.22em;color:rgba(0,245,255,0.28);margin-bottom:8px">TASK TYPE</div>
+        <div style="display:flex;gap:0;border:1px solid rgba(0,245,255,0.2);border-radius:3px;overflow:hidden">
+          <button id="ttype-ongoing" onclick="setTaskType('ongoing')" style="flex:1;padding:10px;font-family:Orbitron,monospace;font-size:8px;font-weight:700;letter-spacing:0.15em;cursor:pointer;background:rgba(0,245,255,0.12);border:none;color:#00f5ff;transition:all .2s">ONGOING</button>
+          <button id="ttype-scheduled" onclick="setTaskType('scheduled')" style="flex:1;padding:10px;font-family:Orbitron,monospace;font-size:8px;font-weight:700;letter-spacing:0.15em;cursor:pointer;background:transparent;border:none;color:rgba(0,245,255,0.35);transition:all .2s">SCHEDULED</button>
+        </div>
+      </div>
+      <!-- Scheduled date (only shown for scheduled type) -->
+      <div id="todo-modal-date-row" style="display:none">
+        <div style="font-size:8px;letter-spacing:.22em;color:rgba(0,245,255,0.28);margin-bottom:6px">SCHEDULED DATE</div>
         <input id="todo-modal-due" type="date" style="width:100%;background:rgba(0,245,255,0.04);border:1px solid rgba(0,245,255,0.12);color:#e0f8ff;font-family:'Share Tech Mono',monospace;font-size:12px;padding:10px 12px;border-radius:3px;outline:none;color-scheme:dark">
+        <div style="font-size:8px;color:rgba(0,245,255,0.3);margin-top:5px;letter-spacing:0.1em">Task will appear on this date and remind you the day before in your briefing</div>
       </div>
       <button id="todo-modal-save" onclick="saveTodoModal()" style="width:100%;background:transparent;border:1px solid #00f5ff;color:#00f5ff;font-family:Orbitron,monospace;font-size:10px;font-weight:700;letter-spacing:0.2em;padding:14px;cursor:pointer;border-radius:2px;margin-top:4px;transition:background .2s" onmouseover="this.style.background='#00f5ff';this.style.color='#010a0f'" onmouseout="this.style.background='transparent';this.style.color='#00f5ff'">ADD TASK</button>
     </div>
