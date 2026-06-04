@@ -1585,6 +1585,33 @@ async function supaGetWeight(limit=14) {
   return supaFetch('weight_log', 'GET', null, '?order=date.desc&limit=' + limit);
 }
 
+// ═══ SYNCED PREFS (cross-device) ═══
+async function getPref(key) {
+  // Check localStorage first (fast)
+  const local = localStorage.getItem('pref_'+key);
+  // Also check Supabase in background
+  try {
+    const rows = await supaFetch('user_prefs','GET',null,'?key=eq.'+key);
+    if(rows?.[0]) {
+      localStorage.setItem('pref_'+key, rows[0].value);
+      return rows[0].value;
+    }
+  } catch(e) {}
+  return local;
+}
+
+async function setPref(key, value) {
+  localStorage.setItem('pref_'+key, value);
+  try {
+    const existing = await supaFetch('user_prefs','GET',null,'?key=eq.'+key);
+    if(existing?.[0]) {
+      await supaFetch('user_prefs','PATCH',{value, updated_at: new Date().toISOString()},'?key=eq.'+key);
+    } else {
+      await supaFetch('user_prefs','POST',{key, value});
+    }
+  } catch(e) { console.log('setPref error:', e); }
+}
+
 // ═══ SCREEN MANAGER ═══
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('visible'));
@@ -1731,9 +1758,10 @@ function glitch() {
 setTimeout(glitch, 5000);
 
 // Enter system
-function enterSystem() {
-  const lastSeen = localStorage.getItem('opt_briefing_date');
-  const seenToday = lastSeen === new Date().toDateString();
+async function enterSystem() {
+  const todayISO = new Date().toISOString().slice(0,10);
+  const lastSeen = await getPref('briefing_date');
+  const seenToday = lastSeen === todayISO;
   const screen = document.getElementById('screen-welcome');
   screen.style.transition = 'opacity 0.6s ease';
   screen.style.opacity = '0';
@@ -1781,23 +1809,7 @@ function drawParticles() {
 }
 drawParticles();
 
-function enterSystem() {
-  const lastSeen = localStorage.getItem('opt_briefing_date');
-  const seenToday = lastSeen === new Date().toDateString();
-  const screen = document.getElementById('screen-welcome');
-  screen.style.transition = 'opacity 0.6s ease';
-  screen.style.opacity = '0';
-  setTimeout(() => {
-    screen.style.display = 'none';
-    if (seenToday) {
-      showScreen('screen-dashboard');
-      initDashboard();
-    } else {
-      showScreen('screen-briefing');
-      initBriefing();
-    }
-  }, 600);
-}
+// enterSystem defined above
 
 // ═══ BRIEFING SCREEN ═══
 async function loadBriefingWorkout() {
@@ -1906,7 +1918,8 @@ function initBriefing() {
 }
 
 function enterDashboard() {
-  localStorage.setItem('opt_briefing_date', new Date().toDateString());
+  const todayISO = new Date().toISOString().slice(0,10);
+  setPref('briefing_date', todayISO); // saves to both localStorage and Supabase
   syncHabitsBack();
   const screen = document.getElementById('screen-briefing');
   screen.style.transition = 'opacity 0.4s ease';
