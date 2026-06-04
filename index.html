@@ -950,7 +950,7 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
         <div class="nav-item" onclick="navigate('todo',this)"><span class="nav-icon">◈</span><span class="nav-label">To-Do</span><span class="nav-badge" id="badge-todo">3</span></div>
         <div class="nav-item" onclick="navigate('budget',this)"><span class="nav-icon">◎</span><span class="nav-label">Budget</span></div>
         <div class="nav-item" onclick="navigate('health',this)"><span class="nav-icon">♦</span><span class="nav-label">Health</span></div>
-        <div class="nav-item" onclick="navigate('habits',this)"><span class="nav-icon">◇</span><span class="nav-label">Habits</span></div>
+        <div class="nav-item" onclick="navigate('habits',this)"><span class="nav-icon">◇</span><span class="nav-label">Journal</span></div>
         <div class="nav-item" onclick="navigate('reading',this)"><span class="nav-icon">▣</span><span class="nav-label">Reading</span></div>
         <div class="nav-item" onclick="navigate('notes',this)"><span class="nav-icon">▤</span><span class="nav-label">Notes</span></div>
         <div class="sidebar-bottom">
@@ -1041,10 +1041,10 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
             <div class="hc-sub" id="home-book-title">—</div>
             <div class="hc-bar"><div class="hc-bar-fill" id="home-read-bar" style="width:0%;background:var(--pink)"></div></div>
           </div>
-          <div class="home-tile" id="tile-habits" onclick="setHero('habits')" data-color="var(--orange)">
-            <div class="hc-label">STREAK</div>
-            <div class="hc-val" style="color:var(--orange)" id="home-streak">—</div>
-            <div class="hc-sub">days 🔥</div>
+          <div class="home-tile" id="tile-habits" onclick="setHero('habits')" data-color="var(--purple)">
+            <div class="hc-label">JOURNAL</div>
+            <div style="font-size:11px;color:var(--purple);margin:4px 0;letter-spacing:0.04em;line-height:1.4" id="home-journal-prompt">—</div>
+            <div class="hc-sub" id="home-journal-streak">— day streak</div>
           </div>
           <div class="home-tile" id="tile-health" onclick="setHero('health')" data-color="var(--purple)">
             <div class="hc-label">SLEEP / WEIGHT</div>
@@ -1411,7 +1411,7 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
   <div class="mob-nav-item" onclick="navigate('todo',this,'mob')"><span class="mob-icon">◈</span><span class="mob-label">To-Do</span></div>
   <div class="mob-nav-item" onclick="navigate('budget',this,'mob')"><span class="mob-icon">◎</span><span class="mob-label">Budget</span></div>
   <div class="mob-nav-item" onclick="navigate('health',this,'mob')"><span class="mob-icon">♦</span><span class="mob-label">Health</span></div>
-  <div class="mob-nav-item" onclick="navigate('habits',this,'mob')"><span class="mob-icon">◇</span><span class="mob-label">Habits</span></div>
+  <div class="mob-nav-item" onclick="navigate('habits',this,'mob')"><span class="mob-icon">◇</span><span class="mob-label">Journal</span></div>
   <div class="mob-nav-item" onclick="navigate('reading',this,'mob')"><span class="mob-icon">▣</span><span class="mob-label">Reading</span></div>
   <div class="mob-nav-item" onclick="navigate('notes',this,'mob')"><span class="mob-icon">▤</span><span class="mob-label">Notes</span></div>
 </div>
@@ -2896,6 +2896,24 @@ async function loadSupabaseData() {
       if(hw) hw.textContent = parseFloat(merged[0].val).toFixed(1);
       renderWeightLog();
     }
+    // Journal data for home tile
+    try {
+      const todayJ = new Date();
+      const todayJStr = todayJ.getFullYear()+'-'+String(todayJ.getMonth()+1).padStart(2,'0')+'-'+String(todayJ.getDate()).padStart(2,'0');
+      const jRows = await supaFetch('journal','GET',null,`?date=eq.${todayJStr}`);
+      const jEntry = jRows?.[0];
+      window._journalPrompt = jEntry?.prompt || '';
+      const promptTile = document.getElementById('home-journal-prompt');
+      const streakTile = document.getElementById('home-journal-streak');
+      if(promptTile && jEntry?.prompt) {
+        promptTile.textContent = jEntry.prompt.length>50 ? jEntry.prompt.slice(0,50)+'...' : jEntry.prompt;
+      }
+      // Count streak
+      const jAll = await supaFetch('journal','GET',null,'?order=date.desc&limit=30&entry=neq.');
+      const jStreak = calcJournalStreak((jAll||[]).filter(e=>e.entry?.trim()));
+      if(streakTile) streakTile.textContent = jStreak+' day streak';
+    } catch(e) {}
+
     // Sleep data for home tile
     const sleepData = await supaGetHealth(1);
     if(sleepData && sleepData.length > 0) {
@@ -2958,7 +2976,7 @@ function initDashboard() {
 let currentHero = 'workout';
 const HERO_COLORS = {
   workout: '#ff4d6d', tasks: '#00f5ff', budget: '#00ff88',
-  reading: '#f72585', habits: '#ff6b00', health: '#9b5de5'
+  reading: '#f72585', habits: '#9b5de5', health: '#9b5de5'
 };
 
 function setHero(type) {
@@ -3073,19 +3091,56 @@ function renderHeroReading(el, color) {
     <div style="font-size:8px;color:${color}55;letter-spacing:0.15em">TAP TO OPEN READING LOG →</div>`;
 }
 
-function renderHeroHabits(el, color) {
-  const streak = document.getElementById('home-streak')?.textContent||'—';
-  const habitData = window._heroHabits || [];
-  el.innerHTML = heroHeader('DAILY PROTOCOLS // HABITS', color) +
-    `<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:14px">
-      <div style="font-family:Orbitron,monospace;font-size:36px;font-weight:900;color:${color};line-height:1">${streak}</div>
-      <div style="font-size:9px;color:${color}77;letter-spacing:0.15em">DAY STREAK 🔥</div>
-    </div>` +
-    (habitData.length ? habitData.map(h=>`
-      <div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid rgba(255,107,0,0.06)">
-        <div style="width:14px;height:14px;border-radius:2px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;${h.done?`background:${color}33;border:1px solid ${color}66;color:${color}`:`border:1px solid ${color}33;color:transparent`}">✓</div>
-        <div style="font-size:11px;color:${h.done?'var(--text)':'var(--text-muted)'};flex:1">${h.name}</div>
-      </div>`).join('') : `<div style="font-size:9px;color:var(--text-muted);letter-spacing:0.15em">NO HABITS CONFIGURED</div>`);
+async function renderHeroHabits(el, color) {
+  el.innerHTML = heroHeader('JOURNAL // DAILY REFLECTION', color) +
+    `<div style="font-size:9px;color:${color}55;letter-spacing:.15em">LOADING...</div>`;
+
+  try {
+    const entries = await supaFetch('journal','GET',null,'?order=date.desc&limit=7')||[];
+    const withText = entries.filter(e=>e.entry&&e.entry.trim());
+    const streak = calcJournalStreak(withText);
+    const today = new Date().toISOString().slice(0,10);
+    const todayEntry = entries.find(e=>e.date===today);
+    const prompt = todayEntry?.prompt || window._journalPrompt || '—';
+    const written = todayEntry?.entry?.trim();
+
+    // Last 7 days grid
+    const DAYS=['Su','M','Tu','W','Th','F','Sa'];
+    const week=[];
+    for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);week.push({ds:d.toISOString().slice(0,10),lbl:DAYS[d.getDay()]});}
+    const entryDates=new Set(withText.map(e=>e.date));
+    const weekGrid=week.map(w=>`<div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+      <div style="width:24px;height:24px;border-radius:3px;background:${entryDates.has(w.ds)?color+'33':'rgba(155,93,229,0.05)'};border:1px solid ${entryDates.has(w.ds)?color+'66':'rgba(155,93,229,0.1)'}"></div>
+      <div style="font-size:7px;color:var(--text-muted)">${w.lbl}</div>
+    </div>`).join('');
+
+    el.innerHTML = heroHeader('JOURNAL // DAILY REFLECTION', color) +
+      `<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:12px">
+        <div style="font-family:Orbitron,monospace;font-size:32px;font-weight:900;color:${color};line-height:1">${streak}</div>
+        <div style="font-size:9px;color:${color}77;letter-spacing:0.15em">DAY STREAK</div>
+        ${written?`<div style="font-size:8px;color:var(--green);letter-spacing:0.12em;margin-left:auto">✓ WRITTEN TODAY</div>`:'<div style="font-size:8px;color:var(--yellow);letter-spacing:0.12em;margin-left:auto">NOT YET WRITTEN</div>'}
+      </div>
+      <div style="font-size:7px;letter-spacing:.2em;color:${color}55;margin-bottom:6px">TODAY'S PROMPT</div>
+      <div style="font-size:11px;color:var(--text-secondary);line-height:1.5;margin-bottom:14px;font-style:italic">${prompt}</div>
+      <div style="font-size:7px;letter-spacing:.2em;color:${color}55;margin-bottom:8px">LAST 7 DAYS</div>
+      <div style="display:flex;gap:6px">${weekGrid}</div>`;
+  } catch(e) {
+    el.innerHTML = heroHeader('JOURNAL', color) + `<div style="font-size:9px;color:var(--text-muted)">TAP TO OPEN JOURNAL →</div>`;
+  }
+}
+
+function calcJournalStreak(entries) {
+  if(!entries.length) return 0;
+  const today = new Date();
+  let streak = 0;
+  for(let i=0;i<30;i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate()-i);
+    const ds = d.toISOString().slice(0,10);
+    if(entries.find(e=>e.date===ds)) streak++;
+    else if(i>0) break;
+  }
+  return streak;
 }
 
 // ── HELPER: mini SVG bar chart ──
@@ -4090,7 +4145,7 @@ function updateBadge() {
   const badge = document.getElementById('badge-todo');
   if (badge) { badge.textContent = active; badge.style.display = active ? '' : 'none'; }
   const ht = document.getElementById('home-tasks');
-  if(ht) ht.textContent = active;
+  if(ht) ht.textContent = active; // tasks badge
 }
 
 function renderHomeTodos() {
