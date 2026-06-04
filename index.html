@@ -1157,7 +1157,7 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
         <div style="display:flex;align-items:center;border-bottom:1px solid var(--card-border);background:rgba(3,15,24,0.95);flex-shrink:0;padding:0 16px">
           <button class="health-tab active" id="htab-train" onclick="switchHealthTab('train')">TRAIN</button>
           <button class="health-tab" id="htab-sleep" onclick="switchHealthTab('sleep')">SLEEP</button>
-          <button class="health-tab" id="htab-weight" onclick="switchHealthTab('weight')">WEIGHT</button>
+
           <div style="flex:1"></div>
           <a href="https://optimize-train.vercel.app/" target="_blank" id="health-open-full" style="font-size:8px;letter-spacing:0.2em;color:var(--text-muted);text-decoration:none;border:1px solid var(--card-border);padding:5px 10px;transition:color .2s,border-color .2s" onmouseover="this.style.color='var(--cyan)';this.style.borderColor='var(--cyan)'" onmouseout="this.style.color='var(--text-muted)';this.style.borderColor='var(--card-border)'">OPEN FULL ↗</a>
         </div>
@@ -1173,60 +1173,54 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
         </div>
 
         <!-- SLEEP tab -->
-        <div id="health-panel-sleep" style="flex:1;display:none;overflow-y:auto;padding:20px">
-          <div class="page-title">SLEEP</div>
-          <div class="page-sub">RECOVERY TRACKING</div>
+        <div id="health-panel-sleep" style="flex:1;display:none;overflow-y:auto;padding:20px;max-width:860px;margin:0 auto;width:100%">
+          <div style="font-family:Orbitron,monospace;font-size:20px;font-weight:700;letter-spacing:0.12em;color:var(--cyan);text-shadow:0 0 14px rgba(0,245,255,0.3);margin-bottom:4px">SLEEP</div>
+          <div style="font-size:8px;letter-spacing:0.2em;color:var(--text-muted);margin-bottom:20px">RECOVERY TRACKING</div>
 
           <!-- Stats row -->
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
-            <div class="card"><div class="card-label">Last Night</div><div class="stat-val cyan" id="hs-hours">—</div><div style="font-size:9px;color:var(--text-muted);margin-top:2px">hours</div></div>
-            <div class="card"><div class="card-label">Sleep Score</div><div class="stat-val purple" id="hs-score">—</div><div style="font-size:9px;color:var(--text-muted);margin-top:2px">/ 100</div></div>
-            <div class="card"><div class="card-label">7-Day Avg</div><div class="stat-val" id="hs-avg">—</div><div style="font-size:9px;color:var(--text-muted);margin-top:2px">hrs</div></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px">
+            <div class="card" style="text-align:center">
+              <div class="card-label" style="margin-bottom:8px">LAST NIGHT</div>
+              <div style="font-family:Orbitron,monospace;font-size:36px;font-weight:900;color:var(--cyan);text-shadow:0 0 16px rgba(0,245,255,0.4);line-height:1" id="hs-hours">—</div>
+              <div style="font-size:9px;color:var(--text-muted);margin-top:6px;letter-spacing:0.15em">HOURS</div>
+            </div>
+            <div class="card" style="text-align:center">
+              <div class="card-label" style="margin-bottom:8px">SLEEP SCORE</div>
+              <div style="font-family:Orbitron,monospace;font-size:36px;font-weight:900;color:var(--purple);text-shadow:0 0 16px rgba(155,93,229,0.4);line-height:1" id="hs-score">—</div>
+              <div style="font-size:9px;color:var(--text-muted);margin-top:6px;letter-spacing:0.15em">/ 100</div>
+            </div>
+            <div class="card" style="text-align:center">
+              <div class="card-label" style="margin-bottom:8px">7-DAY AVG</div>
+              <div style="font-family:Orbitron,monospace;font-size:36px;font-weight:900;color:var(--text-secondary);line-height:1" id="hs-avg">—</div>
+              <div style="font-size:9px;color:var(--text-muted);margin-top:6px;letter-spacing:0.15em">HRS</div>
+            </div>
           </div>
 
           <!-- Sleep history chart -->
-          <div class="card" style="margin-bottom:16px">
-            <div class="card-label" style="margin-bottom:10px">SLEEP HISTORY</div>
-            <div id="hs-chart" style="display:flex;align-items:flex-end;gap:6px;height:100px"></div>
-            <div id="hs-chart-labels" style="display:flex;gap:6px;margin-top:6px"></div>
+          <div class="card" style="margin-bottom:20px">
+            <div class="card-label" style="margin-bottom:16px">SLEEP HISTORY — LAST 7 NIGHTS</div>
+            <div style="display:flex;align-items:flex-end;gap:8px;height:120px;padding:0 4px" id="hs-chart"></div>
+            <div style="display:flex;gap:8px;margin-top:8px;padding:0 4px" id="hs-chart-labels"></div>
+            <!-- Legend -->
+            <div style="display:flex;gap:16px;margin-top:12px;padding-top:10px;border-top:1px solid var(--card-border)">
+              <div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;background:var(--green);border-radius:2px;box-shadow:0 0 5px var(--green)"></div><span style="font-size:8px;color:var(--text-muted);letter-spacing:0.12em">≥7.5h GOOD</span></div>
+              <div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;background:var(--yellow);border-radius:2px;box-shadow:0 0 5px var(--yellow)"></div><span style="font-size:8px;color:var(--text-muted);letter-spacing:0.12em">6–7.5h FAIR</span></div>
+              <div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;background:var(--red);border-radius:2px;box-shadow:0 0 5px var(--red)"></div><span style="font-size:8px;color:var(--text-muted);letter-spacing:0.12em">&lt;6h POOR</span></div>
+            </div>
           </div>
 
-          <!-- Recent log -->
+          <!-- Recent log table -->
           <div class="card">
-            <div class="card-label" style="margin-bottom:10px">RECENT LOGS</div>
+            <div class="card-label" style="margin-bottom:14px">RECENT LOGS</div>
+            <div style="display:grid;grid-template-columns:1fr auto auto;gap:0">
+              <div style="font-size:7px;letter-spacing:0.2em;color:var(--text-muted);padding-bottom:8px;border-bottom:1px solid var(--card-border)">DATE</div>
+              <div style="font-size:7px;letter-spacing:0.2em;color:var(--text-muted);padding-bottom:8px;border-bottom:1px solid var(--card-border);text-align:center;padding-right:24px">HOURS</div>
+              <div style="font-size:7px;letter-spacing:0.2em;color:var(--text-muted);padding-bottom:8px;border-bottom:1px solid var(--card-border);text-align:center">SCORE</div>
+            </div>
             <div id="hs-log-list"></div>
           </div>
         </div>
 
-        <!-- WEIGHT tab -->
-        <div id="health-panel-weight" style="flex:1;display:none;overflow-y:auto;padding:20px">
-          <div class="page-title">WEIGHT</div>
-          <div class="page-sub">BODY WEIGHT TRACKING</div>
-
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-            <div class="card"><div class="card-label">Current</div><div class="stat-val cyan" id="hw-current">—</div><div style="font-size:9px;color:var(--text-muted);margin-top:2px">lbs</div></div>
-            <div class="card"><div class="card-label">7-Day Avg</div><div class="stat-val" id="hw-avg">—</div><div style="font-size:9px;color:var(--text-muted);margin-top:2px">lbs</div></div>
-          </div>
-
-          <!-- Log weight inline -->
-          <div id="hw-log-card" style="display:none;margin-bottom:12px">
-            <div class="card" style="border-color:rgba(0,245,255,.25)">
-              <div class="card-label" style="margin-bottom:8px">LOG WEIGHT</div>
-              <div style="display:flex;gap:8px">
-                <input class="field-input" id="hw-inp" type="number" step="0.1" placeholder="lbs" style="flex:1">
-                <button class="btn-primary" onclick="logHealthWeight()">SAVE</button>
-                <button class="btn-secondary" onclick="document.getElementById('hw-log-card').style.display='none'">✕</button>
-              </div>
-            </div>
-          </div>
-          <button class="btn-primary sm" onclick="document.getElementById('hw-log-card').style.display='';document.getElementById('hw-inp').focus()" style="margin-bottom:16px">+ LOG WEIGHT</button>
-
-          <div class="card">
-            <div class="card-label" style="margin-bottom:10px">HISTORY</div>
-            <svg id="hw-chart-svg" width="100%" height="130" style="overflow:visible;margin-bottom:10px"></svg>
-            <div id="hw-log-list"></div>
-          </div>
-        </div>
 
       </div>
 
@@ -2592,16 +2586,16 @@ function initSleepModal() {} // kept for compatibility — no longer used
 
 // ═══ HEALTH TAB SWITCHING ═══
 function switchHealthTab(tab) {
-  ['train','sleep','weight'].forEach(t => {
+  ['train','sleep'].forEach(t => {
     document.getElementById('htab-'+t)?.classList.toggle('active', t===tab);
     const panel = document.getElementById('health-panel-'+t);
-    if(panel) panel.style.display = t===tab ? 'flex' : 'none';
-    if(t===tab && panel) panel.style.flexDirection = t==='train' ? 'column' : 'block';
+    if(panel) {
+      panel.style.display = t===tab ? (t==='train' ? 'flex' : 'block') : 'none';
+    }
   });
   const openFull = document.getElementById('health-open-full');
   if(openFull) openFull.style.display = tab==='train' ? '' : 'none';
   if(tab==='sleep') loadHealthSleep();
-  if(tab==='weight') loadHealthWeight();
 }
 
 async function loadHealthSleep() {
@@ -2623,25 +2617,29 @@ async function loadHealthSleep() {
   const labels = document.getElementById('hs-chart-labels');
   if(chart) chart.innerHTML = last7.map(l=>{
     const h = parseFloat(l.sleep_hours||0);
-    const pct = Math.round((h/maxH)*100);
+    const heightPx = h ? Math.max(8, Math.round((h/maxH)*110)) : 4;
     const col = h>=7.5?'var(--green)':h>=6?'var(--yellow)':'var(--red)';
-    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
-      <div style="font-size:8px;color:var(--text-muted)">${h||'—'}</div>
-      <div style="width:100%;background:${col};opacity:.8;border-radius:2px 2px 0 0;height:${pct}px;min-height:2px;box-shadow:0 0 6px ${col}"></div>
+    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+      <div style="font-family:Orbitron,monospace;font-size:10px;font-weight:700;color:${col}">${h||'—'}</div>
+      <div style="width:100%;background:${col};border-radius:3px 3px 0 0;height:${heightPx}px;box-shadow:0 0 8px ${col};opacity:.85;align-self:flex-end"></div>
     </div>`;
   }).join('');
-  if(labels) labels.innerHTML = last7.map(l=>`<div style="flex:1;text-align:center;font-size:7px;color:var(--text-muted)">${l.date?.slice(5)||''}</div>`).join('');
+  if(labels) labels.innerHTML = last7.map(l=>`<div style="flex:1;text-align:center;font-size:8px;color:var(--text-muted);letter-spacing:0.08em">${l.date?.slice(5)||''}</div>`).join('');
 
-  // Log list
+  // Log list — table rows
   const logEl = document.getElementById('hs-log-list');
-  if(logEl) logEl.innerHTML = logs.slice(0,7).map(l=>`
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(0,245,255,.05)">
-      <span style="font-size:9px;color:var(--text-muted)">${l.date}</span>
-      <div style="display:flex;gap:16px;text-align:right">
-        <div><div style="font-size:7px;color:var(--text-muted);letter-spacing:.12em">HOURS</div><div style="font-family:Orbitron,monospace;font-size:13px;color:var(--cyan)">${l.sleep_hours||'—'}</div></div>
-        <div><div style="font-size:7px;color:var(--text-muted);letter-spacing:.12em">SCORE</div><div style="font-family:Orbitron,monospace;font-size:13px;color:var(--purple)">${l.sleep_score||'—'}</div></div>
+  if(logEl) logEl.innerHTML = logs.slice(0,10).map(l=>{
+    const quality = l.sleep_score>=80?'EXCELLENT':l.sleep_score>=65?'GOOD':l.sleep_score>=50?'FAIR':'POOR';
+    const qcol = l.sleep_score>=80?'var(--green)':l.sleep_score>=65?'var(--cyan)':l.sleep_score>=50?'var(--yellow)':'var(--red)';
+    return `<div style="display:grid;grid-template-columns:1fr auto auto;gap:0;padding:10px 0;border-bottom:1px solid rgba(0,245,255,.05);align-items:center">
+      <div>
+        <div style="font-size:10px;color:var(--text-secondary)">${l.date}</div>
+        ${l.sleep_score?`<div style="font-size:8px;color:${qcol};letter-spacing:0.1em;margin-top:2px">${quality}</div>`:''}
       </div>
-    </div>`).join('');
+      <div style="font-family:Orbitron,monospace;font-size:16px;color:var(--cyan);text-align:center;padding-right:24px">${l.sleep_hours||'—'}<span style="font-size:8px;color:var(--text-muted)">h</span></div>
+      <div style="font-family:Orbitron,monospace;font-size:16px;color:var(--purple);text-align:center">${l.sleep_score||'—'}</div>
+    </div>`;
+  }).join('');
 }
 
 async function loadHealthWeight() {
