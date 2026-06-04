@@ -3467,7 +3467,7 @@ function renderTodos() {
     const todayDow = new Date(today+'T12:00:00').getDay(); // 0=Sun
     // Recurring tasks only show on their selected days
     if(t.task_type === 'recurring' && !t.done) {
-      const days = t.recurring_days || [];
+      const days = (t.recurring_days || []).map(Number);
       if(!days.includes(todayDow) && todoFilter !== 'all') return false;
     }
     // Scheduled tasks only show on their scheduled date
@@ -3479,7 +3479,7 @@ function renderTodos() {
     if(todoFilter==='today') {
       if(t.done) return false;
       if(t.task_type==='scheduled') return t.scheduled_date===today;
-      if(t.task_type==='recurring') return (t.recurring_days||[]).includes(todayDow);
+      if(t.task_type==='recurring') return (t.recurring_days||[]).map(Number).includes(todayDow);
       return true; // ongoing
     }
     return true;
@@ -3518,7 +3518,7 @@ function renderTodos() {
     const schedToday = schedDate === today;
     const schedTomorrow = schedDate === new Date(Date.now()+86400000).toISOString().slice(0,10);
     const dueDateStr = isRecurring
-      ? `<span style="font-size:8px;letter-spacing:0.08em;color:var(--orange);margin-left:6px">↻ ${(t.recurring_days||[]).map(d=>DAY_SHORT[d]).join(' · ')}</span>`
+      ? `<span style="font-size:8px;letter-spacing:0.08em;color:var(--orange);margin-left:6px">↻ ${(t.recurring_days||[]).map(d=>DAY_SHORT[Number(d)]).join(' · ')}</span>`
       : isScheduled && schedDate
         ? `<span style="font-size:8px;letter-spacing:0.1em;color:${schedToday?'var(--yellow)':schedTomorrow?'var(--orange)':'var(--cyan-dim)'};margin-left:6px">📅 ${schedToday?'TODAY':schedTomorrow?'TOMORROW':schedDate}</span>`
         : t.due_date ? `<span style="font-size:8px;letter-spacing:0.1em;color:${overdue?'var(--red)':dueToday?'var(--yellow)':'var(--text-muted)'};margin-left:6px">${overdue?'OVERDUE':dueToday?'TODAY':t.due_date}</span>` : '';
