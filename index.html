@@ -642,6 +642,14 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
 }
 .sleep-skip:hover { color:var(--text-secondary); }
 
+/* ── JOURNAL ── */
+#journal-entry-text::placeholder{color:rgba(0,245,255,0.15)}
+#journal-entry-text:focus{outline:none}
+.journal-archive-item{background:var(--card);border:1px solid var(--card-border);border-radius:4px;padding:14px;margin-bottom:8px;cursor:pointer;transition:border-color .2s}
+.journal-archive-item:hover{border-color:rgba(155,93,229,0.3)}
+.journal-archive-item.expanded .journal-archive-body{display:block}
+.journal-archive-body{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--card-border);font-size:11px;color:var(--text-secondary);line-height:1.7;white-space:pre-wrap}
+
 /* ── HEALTH TABS ── */
 .health-tab{background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-muted);font-family:'Orbitron',monospace;font-size:9px;font-weight:700;letter-spacing:0.18em;padding:12px 16px;cursor:pointer;transition:all .2s;white-space:nowrap}
 .health-tab:hover{color:var(--text-secondary)}
@@ -1294,28 +1302,45 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
 
       </div>
 
-      <!-- ═══════════════ HABITS ═══════════════ --><!-- ═══════════════ HABITS ═══════════════ -->
+      <!-- ═══════════════ JOURNAL ═══════════════ -->
       <div class="view" id="view-habits">
-        <div class="page-header">
-          <div class="page-title">HABITS</div>
-          <div class="page-sub">DAILY PROTOCOLS // STREAK TRACKER</div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div>
+            <div class="page-title">JOURNAL</div>
+            <div class="page-sub">DAILY REFLECTION // FOR THE FUTURE</div>
+          </div>
+          <div style="font-size:9px;letter-spacing:0.15em;color:var(--text-muted)" id="journal-date-label">—</div>
         </div>
-        <div class="card" style="margin-bottom:16px">
-          <div class="todo-input-row">
-            <input class="todo-input" id="new-habit" placeholder="New habit..." onkeydown="if(event.key==='Enter')addHabit()">
-            <button class="btn" onclick="addHabit()">+ ADD</button>
+
+        <!-- Today's prompt card -->
+        <div class="card" style="border-color:rgba(155,93,229,0.25);margin-bottom:12px;position:relative;overflow:hidden">
+          <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--purple),rgba(155,93,229,0.2),transparent)"></div>
+          <div style="font-size:8px;letter-spacing:0.25em;color:var(--purple);margin-bottom:10px;opacity:0.7">TODAY'S PROMPT</div>
+          <div id="journal-prompt-text" style="font-size:15px;color:var(--text);line-height:1.6;margin-bottom:4px;min-height:40px">
+            <span style="color:var(--text-muted);font-size:11px;letter-spacing:0.15em">GENERATING PROMPT...</span>
+          </div>
+          <button id="journal-refresh-btn" onclick="generateJournalPrompt(true)" style="background:transparent;border:none;color:rgba(155,93,229,0.4);font-size:10px;cursor:pointer;padding:4px 0;letter-spacing:0.1em;margin-top:6px;transition:color .2s" onmouseover="this.style.color='var(--purple)'" onmouseout="this.style.color='rgba(155,93,229,0.4)'">↻ NEW PROMPT</button>
+        </div>
+
+        <!-- Entry area -->
+        <div class="card" style="margin-bottom:12px">
+          <div style="font-size:8px;letter-spacing:0.25em;color:var(--text-muted);margin-bottom:8px">YOUR ENTRY</div>
+          <textarea id="journal-entry-text"
+            placeholder="Write whatever comes to mind — a sentence or a page, no rules..."
+            style="width:100%;min-height:140px;background:transparent;border:none;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:12px;line-height:1.7;resize:vertical;outline:none;letter-spacing:0.03em"
+            oninput="journalUnsaved=true"></textarea>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--card-border)">
+            <div style="font-size:8px;color:var(--text-muted)" id="journal-save-status">—</div>
+            <button onclick="saveJournalEntry()" style="background:transparent;border:1px solid var(--purple);color:var(--purple);font-family:Orbitron,monospace;font-size:8px;font-weight:700;letter-spacing:0.18em;padding:8px 18px;cursor:pointer;border-radius:2px;transition:all .2s" onmouseover="this.style.background='var(--purple)';this.style.color='var(--bg)'" onmouseout="this.style.background='transparent';this.style.color='var(--purple)'">SAVE ENTRY</button>
           </div>
         </div>
-        <div class="card">
-          <div class="card-title" style="margin-bottom:16px;display:flex;justify-content:space-between">
-            <span>This Week</span>
-            <span id="habit-week-label" style="color:var(--text-muted)"></span>
-          </div>
-          <div style="display:flex;gap:5px;margin-bottom:14px;padding-left:132px">
-            <!-- day headers populated by JS -->
-          </div>
-          <div class="habit-list" id="habit-list"></div>
-        </div>
+
+        <!-- Archive -->
+        <div style="font-size:8px;letter-spacing:0.25em;color:var(--text-muted);margin-bottom:10px">PAST ENTRIES</div>
+        <div id="journal-archive"></div>
+        <div id="journal-archive-empty" style="display:none;text-align:center;padding:24px;font-size:9px;letter-spacing:0.2em;color:var(--text-muted)">NO ENTRIES YET — START WRITING</div>
+
       </div>
 
       <!-- ═══════════════ READING ═══════════════ -->
@@ -3206,6 +3231,152 @@ async function renderHeroBudget(el, color) {
       </div>`).join('') : `<div style="font-size:9px;color:var(--text-muted);letter-spacing:.15em">OPEN BUDGET TAB TO LOAD DATA</div>`);
 }
 
+
+
+async function initJournal() {
+  const now = new Date();
+  journalToday = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const label = document.getElementById('journal-date-label');
+  if(label) label.textContent = dayNames[now.getDay()].toUpperCase()+' · '+monthNames[now.getMonth()].toUpperCase()+' '+now.getDate()+', '+now.getFullYear();
+
+  // Load today's entry from Supabase
+  try {
+    const rows = await supaFetch('journal','GET',null,`?date=eq.${journalToday}`);
+    if(rows?.[0]) {
+      // Have entry for today — populate prompt and text
+      document.getElementById('journal-prompt-text').textContent = rows[0].prompt;
+      document.getElementById('journal-entry-text').value = rows[0].entry||'';
+      setJournalStatus(rows[0].entry ? 'Saved ✓' : '');
+    } else {
+      // No entry yet — generate prompt
+      await generateJournalPrompt(false);
+    }
+  } catch(e) { await generateJournalPrompt(false); }
+
+  loadJournalArchive();
+}
+
+async function generateJournalPrompt(force=false) {
+  const promptEl = document.getElementById('journal-prompt-text');
+  const refreshBtn = document.getElementById('journal-refresh-btn');
+  if(promptEl) promptEl.innerHTML = '<span style="color:var(--text-muted);font-size:11px;letter-spacing:0.15em">GENERATING...</span>';
+  if(refreshBtn) refreshBtn.disabled = true;
+
+  // If already have a saved entry today and not forcing, don't regenerate
+  if(!force) {
+    try {
+      const existing = await supaFetch('journal','GET',null,`?date=eq.${journalToday}`);
+      if(existing?.[0]?.prompt) {
+        if(promptEl) promptEl.textContent = existing[0].prompt;
+        if(refreshBtn) refreshBtn.disabled = false;
+        return;
+      }
+    } catch(e) {}
+  }
+
+  try {
+    const now = new Date();
+    const dayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][now.getDay()];
+    const systemPrompt = `You are generating a daily journal prompt for Orin, a young man in his 20s living in Edmonton, Alberta. He is in a relationship, interested in fitness and working out, building software, gaming, and Alberta history. Generate ONE thoughtful, specific journal prompt. The prompt should be grounded and easy to answer — about his current daily life, a recent memory, his relationship, his goals, how he is feeling, something he is looking forward to, or something small and specific from his week. Mix present, past, and future perspectives. Keep it conversational and personal, not generic or therapy-like. The tone should feel like a curious friend asking a real question. Return ONLY the prompt question, nothing else. No preamble, no quotation marks, no explanation.`;
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 150,
+        system: systemPrompt,
+        messages: [{role:'user', content: `Today is ${dayName}. Generate a journal prompt.`}]
+      })
+    });
+    const data = await response.json();
+    const prompt = data.content?.[0]?.text?.trim() || "What's been on your mind lately that you haven't said out loud to anyone?";
+
+    if(promptEl) promptEl.textContent = prompt;
+
+    // Save prompt to Supabase (upsert)
+    const existing = await supaFetch('journal','GET',null,`?date=eq.${journalToday}`);
+    if(existing?.[0]) {
+      await supaFetch('journal','PATCH',{prompt},`?date=eq.${journalToday}`);
+    } else {
+      await supaFetch('journal','POST',{date:journalToday, prompt, entry:''});
+    }
+  } catch(e) {
+    console.log('Prompt generation error:', e);
+    const fallback = "What's something small that happened today that you want to remember?";
+    if(promptEl) promptEl.textContent = fallback;
+  }
+
+  if(refreshBtn) refreshBtn.disabled = false;
+}
+
+function setJournalStatus(msg) {
+  const el = document.getElementById('journal-save-status');
+  if(el) el.textContent = msg;
+}
+
+async function saveJournalEntry() {
+  const text = document.getElementById('journal-entry-text')?.value.trim();
+  const prompt = document.getElementById('journal-prompt-text')?.textContent;
+  if(!text) { setJournalStatus('Write something first...'); return; }
+  setJournalStatus('Saving...');
+  try {
+    const existing = await supaFetch('journal','GET',null,`?date=eq.${journalToday}`);
+    if(existing?.[0]) {
+      await supaFetch('journal','PATCH',{entry:text, updated_at:new Date().toISOString()},`?date=eq.${journalToday}`);
+    } else {
+      await supaFetch('journal','POST',{date:journalToday, prompt:prompt||'', entry:text});
+    }
+    journalUnsaved = false;
+    setJournalStatus('Saved ✓');
+    loadJournalArchive();
+  } catch(e) {
+    setJournalStatus('Error saving — try again');
+    console.log('Journal save error:', e);
+  }
+}
+
+async function loadJournalArchive() {
+  const container = document.getElementById('journal-archive');
+  const empty = document.getElementById('journal-archive-empty');
+  if(!container) return;
+
+  try {
+    const entries = await supaFetch('journal','GET',null,'?order=date.desc&limit=30')||[];
+    const withEntries = entries.filter(e=>e.entry&&e.entry.trim());
+
+    if(!withEntries.length) {
+      container.innerHTML = '';
+      if(empty) empty.style.display = '';
+      return;
+    }
+    if(empty) empty.style.display = 'none';
+
+    const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    container.innerHTML = withEntries.map((e,i)=>{
+      const dt = new Date(e.date+'T12:00:00');
+      const dateStr = DAYS[dt.getDay()]+' · '+MONTHS[dt.getMonth()]+' '+dt.getDate()+', '+dt.getFullYear();
+      const isToday = e.date === journalToday;
+      const preview = e.entry.length>80 ? e.entry.slice(0,80)+'...' : e.entry;
+      return `<div class="journal-archive-item ${i===0&&isToday?'expanded':''}" onclick="this.classList.toggle('expanded')">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div style="font-size:8px;letter-spacing:0.2em;color:var(--purple);opacity:0.7">${dateStr}${isToday?' · TODAY':''}</div>
+          <div style="font-size:9px;color:rgba(155,93,229,0.4)">▾</div>
+        </div>
+        <div style="font-size:10px;color:rgba(155,93,229,0.6);margin-bottom:6px;line-height:1.5;font-style:italic">${e.prompt}</div>
+        <div style="font-size:11px;color:var(--text-muted);line-height:1.6">${preview}</div>
+        <div class="journal-archive-body">${e.entry}</div>
+      </div>`;
+    }).join('');
+  } catch(err) {
+    console.log('Archive load error:', err);
+  }
+}
+
 function updateHomeSats() {
   // Populate task data for hero
   window._heroTasks = todos || [];
@@ -3238,6 +3409,154 @@ function updateHomeRing() {
   if (remEl) {
     if (remaining <= 0) remEl.textContent = 'Rest up';
     else remEl.textContent = hrsLeft + 'h ' + minsLeft + 'm left';
+  }
+}
+
+// ═══ JOURNAL ═══
+let journalToday = '';
+let journalUnsaved = false;
+
+async function initJournal() {
+  const now = new Date();
+  journalToday = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const label = document.getElementById('journal-date-label');
+  if(label) label.textContent = dayNames[now.getDay()].toUpperCase()+' · '+monthNames[now.getMonth()].toUpperCase()+' '+now.getDate()+', '+now.getFullYear();
+
+  // Load today's entry from Supabase
+  try {
+    const rows = await supaFetch('journal','GET',null,`?date=eq.${journalToday}`);
+    if(rows?.[0]) {
+      // Have entry for today — populate prompt and text
+      document.getElementById('journal-prompt-text').textContent = rows[0].prompt;
+      document.getElementById('journal-entry-text').value = rows[0].entry||'';
+      setJournalStatus(rows[0].entry ? 'Saved ✓' : '');
+    } else {
+      // No entry yet — generate prompt
+      await generateJournalPrompt(false);
+    }
+  } catch(e) { await generateJournalPrompt(false); }
+
+  loadJournalArchive();
+}
+
+async function generateJournalPrompt(force=false) {
+  const promptEl = document.getElementById('journal-prompt-text');
+  const refreshBtn = document.getElementById('journal-refresh-btn');
+  if(promptEl) promptEl.innerHTML = '<span style="color:var(--text-muted);font-size:11px;letter-spacing:0.15em">GENERATING...</span>';
+  if(refreshBtn) refreshBtn.disabled = true;
+
+  // If already have a saved entry today and not forcing, don't regenerate
+  if(!force) {
+    try {
+      const existing = await supaFetch('journal','GET',null,`?date=eq.${journalToday}`);
+      if(existing?.[0]?.prompt) {
+        if(promptEl) promptEl.textContent = existing[0].prompt;
+        if(refreshBtn) refreshBtn.disabled = false;
+        return;
+      }
+    } catch(e) {}
+  }
+
+  try {
+    const now = new Date();
+    const dayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][now.getDay()];
+    const systemPrompt = `You are generating a daily journal prompt for Orin, a young man in his 20s living in Edmonton, Alberta. He is in a relationship, interested in fitness and working out, building software, gaming, and Alberta history. Generate ONE thoughtful, specific journal prompt. The prompt should be grounded and easy to answer — about his current daily life, a recent memory, his relationship, his goals, how he is feeling, something he is looking forward to, or something small and specific from his week. Mix present, past, and future perspectives. Keep it conversational and personal, not generic or therapy-like. The tone should feel like a curious friend asking a real question. Return ONLY the prompt question, nothing else. No preamble, no quotation marks, no explanation.`;
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 150,
+        system: systemPrompt,
+        messages: [{role:'user', content: `Today is ${dayName}. Generate a journal prompt.`}]
+      })
+    });
+    const data = await response.json();
+    const prompt = data.content?.[0]?.text?.trim() || "What's been on your mind lately that you haven't said out loud to anyone?";
+
+    if(promptEl) promptEl.textContent = prompt;
+
+    // Save prompt to Supabase (upsert)
+    const existing = await supaFetch('journal','GET',null,`?date=eq.${journalToday}`);
+    if(existing?.[0]) {
+      await supaFetch('journal','PATCH',{prompt},`?date=eq.${journalToday}`);
+    } else {
+      await supaFetch('journal','POST',{date:journalToday, prompt, entry:''});
+    }
+  } catch(e) {
+    console.log('Prompt generation error:', e);
+    const fallback = "What's something small that happened today that you want to remember?";
+    if(promptEl) promptEl.textContent = fallback;
+  }
+
+  if(refreshBtn) refreshBtn.disabled = false;
+}
+
+function setJournalStatus(msg) {
+  const el = document.getElementById('journal-save-status');
+  if(el) el.textContent = msg;
+}
+
+async function saveJournalEntry() {
+  const text = document.getElementById('journal-entry-text')?.value.trim();
+  const prompt = document.getElementById('journal-prompt-text')?.textContent;
+  if(!text) { setJournalStatus('Write something first...'); return; }
+  setJournalStatus('Saving...');
+  try {
+    const existing = await supaFetch('journal','GET',null,`?date=eq.${journalToday}`);
+    if(existing?.[0]) {
+      await supaFetch('journal','PATCH',{entry:text, updated_at:new Date().toISOString()},`?date=eq.${journalToday}`);
+    } else {
+      await supaFetch('journal','POST',{date:journalToday, prompt:prompt||'', entry:text});
+    }
+    journalUnsaved = false;
+    setJournalStatus('Saved ✓');
+    loadJournalArchive();
+  } catch(e) {
+    setJournalStatus('Error saving — try again');
+    console.log('Journal save error:', e);
+  }
+}
+
+async function loadJournalArchive() {
+  const container = document.getElementById('journal-archive');
+  const empty = document.getElementById('journal-archive-empty');
+  if(!container) return;
+
+  try {
+    const entries = await supaFetch('journal','GET',null,'?order=date.desc&limit=30')||[];
+    const withEntries = entries.filter(e=>e.entry&&e.entry.trim());
+
+    if(!withEntries.length) {
+      container.innerHTML = '';
+      if(empty) empty.style.display = '';
+      return;
+    }
+    if(empty) empty.style.display = 'none';
+
+    const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    container.innerHTML = withEntries.map((e,i)=>{
+      const dt = new Date(e.date+'T12:00:00');
+      const dateStr = DAYS[dt.getDay()]+' · '+MONTHS[dt.getMonth()]+' '+dt.getDate()+', '+dt.getFullYear();
+      const isToday = e.date === journalToday;
+      const preview = e.entry.length>80 ? e.entry.slice(0,80)+'...' : e.entry;
+      return `<div class="journal-archive-item ${i===0&&isToday?'expanded':''}" onclick="this.classList.toggle('expanded')">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div style="font-size:8px;letter-spacing:0.2em;color:var(--purple);opacity:0.7">${dateStr}${isToday?' · TODAY':''}</div>
+          <div style="font-size:9px;color:rgba(155,93,229,0.4)">▾</div>
+        </div>
+        <div style="font-size:10px;color:rgba(155,93,229,0.6);margin-bottom:6px;line-height:1.5;font-style:italic">${e.prompt}</div>
+        <div style="font-size:11px;color:var(--text-muted);line-height:1.6">${preview}</div>
+        <div class="journal-archive-body">${e.entry}</div>
+      </div>`;
+    }).join('');
+  } catch(err) {
+    console.log('Archive load error:', err);
   }
 }
 
