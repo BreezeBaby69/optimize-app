@@ -1084,10 +1084,10 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
             <button class="todo-filter-btn" id="tf-done" onclick="setTodoFilter('done',this)">DONE</button>
           </div>
           <div style="flex:1"></div>
-          <select class="priority-select" id="todo-sort" onchange="renderTodos()" style="font-size:8px;padding:4px 8px">
-            <option value="created">NEWEST</option>
-            <option value="priority">PRIORITY</option>
-            <option value="due">DUE DATE</option>
+          <select id="todo-sort" onchange="renderTodos()" style="font-size:8px;padding:4px 8px;background:#061a26;border:1px solid rgba(0,245,255,0.2);color:#e0f8ff;font-family:'Share Tech Mono',monospace;border-radius:3px;outline:none;cursor:pointer">
+            <option value="created" style="background:#061a26;color:#e0f8ff">NEWEST</option>
+            <option value="priority" style="background:#061a26;color:#e0f8ff">PRIORITY</option>
+            <option value="due" style="background:#061a26;color:#e0f8ff">DUE DATE</option>
           </select>
           <button class="todo-filter-btn" id="tf-focus" onclick="toggleFocusMode()" title="Focus mode">◎</button>
         </div>
