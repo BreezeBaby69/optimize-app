@@ -933,110 +933,122 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
       </nav>
       <main id="main">
         <!-- ═══════════════ HOME ═══════════════ -->
-      <div class="view active" id="view-home" style="padding:12px;">
+      <div class="view active" id="view-home" style="padding:14px;display:flex;flex-direction:column;gap:10px;">
 
-        <div style="display:flex;flex-direction:column;gap:8px;height:100%">
-        <!-- GREETING -->
-        <div style="text-align:center;padding:4px 0">
-          <div style="font-family:Orbitron,monospace;font-size:10px;letter-spacing:0.25em;color:var(--text-muted)" id="home-date">LOADING...</div>
-          <div style="font-family:Orbitron,monospace;font-size:clamp(14px,3vw,20px);font-weight:700;letter-spacing:0.12em;color:var(--cyan);text-shadow:0 0 16px rgba(0,245,255,0.3);margin-top:2px" id="home-greeting">GOOD MORNING, ORIN</div>
-        </div>
-
-        <!-- MAIN ROW: left stats | center ring | right stats -->
-        <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;flex:0 0 auto">
-
-          <!-- LEFT COLUMN -->
-          <div style="display:flex;flex-direction:column;gap:8px">
-            <div class="hc" onclick="navigateTo('todo')">
-              <div class="hc-label">TASKS</div>
-              <div class="hc-val" id="home-tasks">3</div>
-              <div class="hc-sub">remaining</div>
-              <div class="hc-bar"><div class="hc-bar-fill" id="home-tasks-bar" style="width:0%;background:var(--cyan)"></div></div>
+        <!-- ── GREETING + WEATHER ROW ── -->
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+          <div>
+            <div style="font-size:9px;letter-spacing:0.25em;color:var(--text-muted)" id="home-date">LOADING...</div>
+            <div style="font-family:Orbitron,monospace;font-size:clamp(16px,2.5vw,24px);font-weight:700;letter-spacing:0.1em;color:var(--cyan);text-shadow:0 0 16px rgba(0,245,255,0.3);margin-top:2px" id="home-greeting">GOOD MORNING, ORIN</div>
+          </div>
+          <!-- Mini weather pill -->
+          <div style="display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--card-border);border-radius:20px;padding:6px 14px">
+            <div style="font-size:18px" id="w-icon">🌐</div>
+            <div>
+              <div style="font-family:Orbitron,monospace;font-size:14px;font-weight:700;color:var(--cyan)" id="w-temp">—°</div>
+              <div style="font-size:7px;letter-spacing:0.1em;color:var(--text-muted)" id="w-desc">EDMONTON</div>
             </div>
-            <div class="hc" onclick="navigateTo('reading')">
-              <div class="hc-label">READING</div>
-              <div class="hc-val" style="font-size:18px;color:var(--pink)" id="home-read-pct">35%</div>
-              <div class="hc-sub">Atomic Habits</div>
-              <div class="hc-bar"><div class="hc-bar-fill" id="home-read-bar" style="width:35%;background:var(--pink)"></div></div>
+            <div style="width:1px;height:24px;background:var(--card-border);margin:0 4px"></div>
+            <div style="text-align:center">
+              <div style="font-size:7px;letter-spacing:0.1em;color:var(--text-muted)">WIND</div>
+              <div style="font-size:9px;color:var(--text-secondary)" id="w-wind-home">—</div>
             </div>
-            <div class="hc" onclick="navigateTo('habits')">
-              <div class="hc-label">STREAK</div>
-              <div class="hc-val" style="color:var(--orange)" id="home-streak">4</div>
-              <div class="hc-sub">days 🔥</div>
+            <div style="text-align:center">
+              <div style="font-size:7px;letter-spacing:0.1em;color:var(--text-muted)">FEELS</div>
+              <div style="font-size:9px;color:var(--text-secondary)" id="w-feels-home">—°</div>
             </div>
           </div>
+        </div>
 
-          <!-- CENTER RING -->
-          <div style="position:relative;width:190px;height:190px;flex-shrink:0">
-            <svg width="190" height="190" style="position:absolute;top:0;left:0">
-              <circle cx="95" cy="95" r="88" fill="none" stroke="rgba(0,245,255,0.06)" stroke-width="1"/>
-              <circle cx="95" cy="95" r="88" fill="none" stroke="rgba(0,245,255,0.12)" stroke-width="1.5" stroke-dasharray="2 12" stroke-linecap="round"/>
-              <circle cx="95" cy="95" r="75" fill="none" stroke="rgba(0,245,255,0.08)" stroke-width="12"/>
-              <circle cx="95" cy="95" r="75" fill="none" stroke="var(--cyan)" stroke-width="12"
-                stroke-linecap="round"
-                stroke-dasharray="471.2"
-                stroke-dashoffset="471.2"
-                transform="rotate(-90 95 95)"
-                id="day-ring"
-                style="filter:drop-shadow(0 0 8px rgba(0,245,255,0.6));transition:stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1)"/>
-              <circle cx="95" cy="95" r="63" fill="rgba(0,245,255,0.02)" stroke="rgba(0,245,255,0.06)" stroke-width="0.5"/>
+        <!-- ── HERO WORKOUT CARD ── -->
+        <div onclick="navigateTo('health')" style="cursor:pointer;background:var(--card);border:1px solid rgba(255,77,109,0.25);border-radius:6px;padding:16px 18px;position:relative;overflow:hidden;flex-shrink:0">
+          <!-- Accent line -->
+          <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#ff4d6d,rgba(255,77,109,0.2),transparent)"></div>
+          <!-- Decorative ring - small, right side -->
+          <div style="position:absolute;right:-30px;top:50%;transform:translateY(-50%)">
+            <svg width="140" height="140" opacity="0.12">
+              <circle cx="70" cy="70" r="60" fill="none" stroke="#ff4d6d" stroke-width="1" stroke-dasharray="3 8"/>
+              <circle cx="70" cy="70" r="46" fill="none" stroke="#ff4d6d" stroke-width="8"
+                stroke-dasharray="289" stroke-dashoffset="289"
+                transform="rotate(-90 70 70)" id="day-ring"
+                style="transition:stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1)"/>
             </svg>
             <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
-              <div style="font-family:Orbitron,monospace;font-size:36px;font-weight:900;color:var(--cyan);line-height:1;text-shadow:0 0 20px rgba(0,245,255,0.5)" id="day-pct">0%</div>
-              <div style="font-size:7px;letter-spacing:0.3em;color:var(--text-muted);margin-top:3px">DAY ACTIVE</div>
-              <div style="font-size:8px;letter-spacing:0.1em;color:var(--text-secondary);margin-top:4px;text-align:center" id="day-remaining">— left</div>
+              <div style="font-family:Orbitron,monospace;font-size:20px;font-weight:900;color:#ff4d6d;line-height:1" id="day-pct">0%</div>
+              <div style="font-size:6px;letter-spacing:0.2em;color:rgba(255,77,109,0.5);margin-top:2px">DAY</div>
+              <div style="font-size:7px;color:rgba(255,77,109,0.5);margin-top:3px;text-align:center" id="day-remaining">—</div>
             </div>
           </div>
 
-          <!-- RIGHT COLUMN -->
-          <div style="display:flex;flex-direction:column;gap:8px">
-            <div class="hc" onclick="navigateTo('health')">
-              <div class="hc-label">WEIGHT</div>
-              <div class="hc-val" style="color:var(--text-secondary)" id="home-weight">—</div>
-              <div class="hc-sub">lbs</div>
-            </div>
-            <div class="hc" onclick="navigateTo('health')">
-              <div class="hc-label">WORKOUT</div>
-              <div style="font-size:11px;font-weight:700;color:#ff4d6d;letter-spacing:0.05em;margin:4px 0;line-height:1.2" id="home-workout">—</div>
-              <div class="hc-sub" id="home-workout-sub">today</div>
-            </div>
-            <div class="hc" onclick="navigateTo('budget')">
-              <div class="hc-label">NET / MONTH</div>
-              <div class="hc-val" style="font-size:16px" id="home-net">—</div>
-              <div class="hc-sub" id="home-net-sub">loading...</div>
-              <div class="hc-bar"><div class="hc-bar-fill" id="home-budget-bar" style="width:0%;background:var(--green)"></div></div>
-            </div>
+          <div style="max-width:calc(100% - 130px)">
+            <div style="font-size:8px;letter-spacing:0.25em;color:rgba(255,77,109,0.6);margin-bottom:4px">TODAY'S WORKOUT</div>
+            <div style="font-family:Orbitron,monospace;font-size:clamp(14px,2vw,20px);font-weight:700;color:#ff4d6d;margin-bottom:2px;letter-spacing:0.06em" id="home-workout">—</div>
+            <div style="font-size:9px;color:rgba(255,77,109,0.5);letter-spacing:0.1em;margin-bottom:12px" id="home-workout-sub">—</div>
+            <!-- Exercise preview list -->
+            <div id="home-workout-exercises" style="display:flex;flex-direction:column;gap:4px"></div>
+          </div>
+        </div>
+
+        <!-- ── STAT STRIP ── -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;flex-shrink:0">
+
+          <!-- Tasks -->
+          <div class="hc" onclick="navigateTo('todo')" style="border-left:2px solid var(--cyan);border-radius:0 4px 4px 0">
+            <div class="hc-label">TASKS</div>
+            <div class="hc-val" id="home-tasks">—</div>
+            <div class="hc-sub">remaining</div>
+            <div class="hc-bar"><div class="hc-bar-fill" id="home-tasks-bar" style="width:0%;background:var(--cyan)"></div></div>
+          </div>
+
+          <!-- Reading -->
+          <div class="hc" onclick="navigateTo('reading')" style="border-left:2px solid var(--pink);border-radius:0 4px 4px 0">
+            <div class="hc-label">READING</div>
+            <div class="hc-val" style="font-size:18px;color:var(--pink)" id="home-read-pct">—</div>
+            <div class="hc-sub" id="home-book-title">—</div>
+            <div class="hc-bar"><div class="hc-bar-fill" id="home-read-bar" style="width:0%;background:var(--pink)"></div></div>
+          </div>
+
+          <!-- Weight -->
+          <div class="hc" onclick="navigateTo('health')" style="border-left:2px solid var(--text-secondary);border-radius:0 4px 4px 0">
+            <div class="hc-label">WEIGHT</div>
+            <div class="hc-val" style="color:var(--text-secondary)" id="home-weight">—</div>
+            <div class="hc-sub">lbs</div>
+          </div>
+
+          <!-- Net -->
+          <div class="hc" onclick="navigateTo('budget')" style="border-left:2px solid var(--green);border-radius:0 4px 4px 0">
+            <div class="hc-label">NET / MONTH</div>
+            <div class="hc-val" style="font-size:16px" id="home-net">—</div>
+            <div class="hc-sub" id="home-net-sub">—</div>
+            <div class="hc-bar"><div class="hc-bar-fill" id="home-budget-bar" style="width:0%;background:var(--green)"></div></div>
           </div>
 
         </div>
 
-        <!-- WEATHER STRIP -->
-        <div style="background:var(--card);border:1px solid var(--card-border);border-radius:4px;padding:10px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0">
-          <div style="font-size:24px" id="w-icon">🌐</div>
-          <div style="flex:1">
-            <div style="display:flex;align-items:baseline;gap:6px">
-              <div style="font-family:Orbitron,monospace;font-size:22px;font-weight:700;color:var(--cyan)" id="w-temp">—°</div>
-              <div style="font-size:8px;letter-spacing:0.12em;color:var(--text-muted)">C · EDMONTON</div>
-            </div>
-            <div style="font-size:9px;letter-spacing:0.12em;color:var(--text-secondary);margin-top:1px" id="w-desc">Fetching...</div>
+        <!-- ── BOTTOM ROW: Streak + Sleep ── -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;flex-shrink:0">
+          <div class="hc" onclick="navigateTo('habits')" style="border-left:2px solid var(--orange);border-radius:0 4px 4px 0">
+            <div class="hc-label">HABIT STREAK</div>
+            <div class="hc-val" style="color:var(--orange)" id="home-streak">—</div>
+            <div class="hc-sub">days 🔥</div>
           </div>
-          <div style="display:flex;gap:14px">
-            <div style="text-align:center">
-              <div style="font-size:7px;letter-spacing:0.12em;color:var(--text-muted)">WIND</div>
-              <div style="font-size:9px;color:var(--text-secondary);margin-top:2px" id="w-wind-home">—</div>
+          <div class="hc" onclick="navigateTo('health')" style="border-left:2px solid var(--purple);border-radius:0 4px 4px 0">
+            <div class="hc-label">LAST SLEEP</div>
+            <div style="display:flex;align-items:baseline;gap:8px;margin:4px 0">
+              <div class="hc-val" style="color:var(--cyan)" id="home-sleep-hrs">—</div>
+              <div style="font-size:9px;color:var(--text-muted)">hrs</div>
+              <div class="hc-val" style="font-size:16px;color:var(--purple)" id="home-sleep-score">—</div>
+              <div style="font-size:9px;color:var(--text-muted)">score</div>
             </div>
-            <div style="text-align:center">
-              <div style="font-size:7px;letter-spacing:0.12em;color:var(--text-muted)">FEELS</div>
-              <div style="font-size:9px;color:var(--text-secondary);margin-top:2px" id="w-feels-home">—°</div>
-            </div>
+            <div class="hc-sub" id="home-sleep-quality">—</div>
           </div>
-          <span id="w-hum" style="display:none"></span>
-          <span id="w-uv" style="display:none"></span>
-          <span id="home-todo-list" style="display:none"></span>
-          <span id="home-habits" style="display:none"></span>
-          <span id="home-book-title" style="display:none"></span>
         </div>
-        </div><!-- end flex wrapper -->
+
+        <!-- Hidden compat elements -->
+        <span id="w-hum" style="display:none"></span>
+        <span id="w-uv" style="display:none"></span>
+        <span id="home-todo-list" style="display:none"></span>
+        <span id="home-habits" style="display:none"></span>
 
       </div>
 
@@ -1970,11 +1982,25 @@ async function loadBriefingWorkout() {
         ${sorted.length>6?`<div style="font-size:9px;color:rgba(255,77,109,0.4);margin-top:8px;letter-spacing:.15em">+${sorted.length-6} more exercises</div>`:''}
       </div>`;
 
-    // Update home workout tile
+    // Update home workout hero card
     const hw = document.getElementById('home-workout');
     const hwsub = document.getElementById('home-workout-sub');
     if(hw) hw.textContent = dayName;
     if(hwsub) hwsub.textContent = progName;
+    // Show first 4 exercises as preview
+    const previewEl = document.getElementById('home-workout-exercises');
+    if(previewEl && sorted) {
+      previewEl.innerHTML = sorted.slice(0,4).map((pe,i)=>{
+        const ex = exMap[pe.exercise_id]||{};
+        const ss = pe.superset_group;
+        return `<div style="display:flex;align-items:center;gap:8px;padding:3px 0;border-bottom:1px solid rgba(255,77,109,0.08)">
+          ${ss?`<span style="font-family:Orbitron,monospace;font-size:7px;font-weight:700;color:#ff4d6d;background:rgba(255,77,109,0.1);border:1px solid rgba(255,77,109,0.25);width:14px;height:14px;display:flex;align-items:center;justify-content:center;border-radius:2px;flex-shrink:0">${ss}</span>`:'<span style="width:14px;flex-shrink:0"></span>'}
+          <span style="font-size:10px;color:rgba(255,77,109,0.75);flex:1;letter-spacing:0.04em">${ex.name||'—'}</span>
+          <span style="font-size:9px;color:rgba(255,77,109,0.4);white-space:nowrap">${pe.sets||3}×${pe.reps||10}</span>
+        </div>`;
+      }).join('');
+      if(sorted.length>4) previewEl.innerHTML += `<div style="font-size:8px;color:rgba(255,77,109,0.35);margin-top:4px;letter-spacing:0.12em">+${sorted.length-4} more</div>`;
+    }
 
   } catch(e) {
     el.innerHTML = `<div class="card-heading" style="color:#ff4d6d">Workout</div><div style="font-size:9px;color:rgba(255,77,109,0.4);margin-top:12px;letter-spacing:.15em">UNABLE TO LOAD</div>`;
@@ -2758,6 +2784,20 @@ async function loadSupabaseData() {
       if(hw) hw.textContent = parseFloat(merged[0].val).toFixed(1);
       renderWeightLog();
     }
+    // Sleep data for home tile
+    const sleepData = await supaGetHealth(1);
+    if(sleepData && sleepData.length > 0) {
+      const s = sleepData[0];
+      const shEl = document.getElementById('home-sleep-hrs');
+      const ssEl = document.getElementById('home-sleep-score');
+      const sqEl = document.getElementById('home-sleep-quality');
+      if(shEl) shEl.textContent = s.sleep_hours||'—';
+      if(ssEl) ssEl.textContent = s.sleep_score||'—';
+      if(sqEl) {
+        const q = s.sleep_score>=80?'EXCELLENT':s.sleep_score>=65?'GOOD':s.sleep_score>=50?'FAIR':'POOR';
+        sqEl.textContent = s.sleep_hours ? s.sleep_hours+'h · '+q : '—';
+      }
+    }
   } catch(e) {
     console.log('Supabase load error:', e);
   }
@@ -2816,8 +2856,9 @@ function updateHomeRing() {
   const minsLeft = remaining % 60;
 
   const ring = document.getElementById('day-ring');
-  const circumference = 471.2; // matches r=75 ring
+  const circumference = 289; // r=46 ring in hero card
   if (ring) ring.style.strokeDashoffset = circumference - (circumference * pct / 100);
+  ring.style.stroke = '#ff4d6d';
 
   const pctEl = document.getElementById('day-pct');
   if (pctEl) pctEl.textContent = pct + '%';
