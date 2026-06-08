@@ -2099,10 +2099,6 @@ const MONTHS = ['January','February','March','April','May','June','July','August
 const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const DAY_SHORT = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
 
-function tick() {
-  const now = new Date();
-  document.getElementById('hud-clock').textContent = now.toTimeString().slice(0,8);
-}
 tick(); setInterval(tick, 1000);
 
 // Date string
@@ -2898,8 +2894,9 @@ function initDashboard() {
   updateHomeRing();
   updateHomeSats();
   dashTick();
-  loadSupabaseData();
-  loadBriefingWorkout();
+  loadSupabaseData().then(()=>{
+    loadBriefingWorkout().then(()=>setHero('workout'));
+  });
   setTimeout(()=>setHero('workout'), 400);
   setInterval(dashTick, 1000);
   setInterval(updateHomeRing, 60000);
@@ -3166,11 +3163,6 @@ async function renderHeroBudget(el, color) {
 
 
 
-function updateHomeSats() {
-  // Populate task data for hero
-  window._heroTasks = todos || [];
-  window._heroHabits = habits ? habits.map(h=>({name:h.name,done:h.done})) : [];
-}
 
 function updateHomeRing() {
   const now = new Date();
