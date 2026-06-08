@@ -1045,7 +1045,7 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
           </div>
           <div class="home-tile" id="tile-habits" onclick="setHero('habits')" data-color="var(--purple)">
             <div class="hc-label">JOURNAL</div>
-            <div style="font-size:11px;color:var(--purple);margin:4px 0;letter-spacing:0.04em;line-height:1.4" id="home-journal-prompt">—</div>
+            <div style="font-size:10px;color:var(--purple);margin:4px 0;letter-spacing:0.04em;line-height:1.4;opacity:0.7" id="home-journal-prompt">Generating prompt...</div>
             <div class="hc-sub" id="home-journal-streak">— day streak</div>
           </div>
           <div class="home-tile" id="tile-health" onclick="setHero('health')" data-color="var(--purple)">
@@ -2898,23 +2898,7 @@ async function loadSupabaseData() {
       if(hw) hw.textContent = parseFloat(merged[0].val).toFixed(1);
       renderWeightLog();
     }
-    // Journal data for home tile
-    try {
-      const todayJ = new Date();
-      const todayJStr = todayJ.getFullYear()+'-'+String(todayJ.getMonth()+1).padStart(2,'0')+'-'+String(todayJ.getDate()).padStart(2,'0');
-      const jRows = await supaFetch('journal','GET',null,`?date=eq.${todayJStr}`);
-      const jEntry = jRows?.[0];
-      window._journalPrompt = jEntry?.prompt || '';
-      const promptTile = document.getElementById('home-journal-prompt');
-      const streakTile = document.getElementById('home-journal-streak');
-      if(promptTile && jEntry?.prompt) {
-        promptTile.textContent = jEntry.prompt.length>50 ? jEntry.prompt.slice(0,50)+'...' : jEntry.prompt;
-      }
-      // Count streak
-      const jAll = await supaFetch('journal','GET',null,'?order=date.desc&limit=30&entry=neq.');
-      const jStreak = calcJournalStreak((jAll||[]).filter(e=>e.entry?.trim()));
-      if(streakTile) streakTile.textContent = jStreak+' day streak';
-    } catch(e) {}
+    // Journal data handled by loadJournalForHome() — skip here to avoid race condition
 
     // Sleep data for home tile
     const sleepData = await supaGetHealth(1);
@@ -3302,35 +3286,6 @@ async function renderHeroBudget(el, color) {
 
 
 
-async function loadJournalForHome() {
-  try {
-    const now = new Date();
-    const todayStr = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
-    const rows = await supaFetch('journal','GET',null,`?date=eq.${todayStr}`);
-    const entry = rows?.[0];
-    window._journalPrompt = entry?.prompt || '';
-    window._journalWritten = !!(entry?.entry?.trim());
-
-    // Update tile
-    const promptEl = document.getElementById('home-journal-prompt');
-    const streakEl = document.getElementById('home-journal-streak');
-    if(promptEl && entry?.prompt) {
-      const p = entry.prompt;
-      promptEl.textContent = p.length>55 ? p.slice(0,55)+'...' : p;
-    }
-
-    // Calc streak
-    const all = await supaFetch('journal','GET',null,'?order=date.desc&limit=30')||[];
-    const withText = all.filter(e=>e.entry?.trim());
-    const streak = calcJournalStreak(withText);
-    if(streakEl) streakEl.textContent = streak+' day streak';
-
-    // If journal hero is active, re-render
-    if(typeof currentHero!=='undefined' && currentHero==='habits') setHero('habits');
-  } catch(e) { console.log('Journal home load error:', e); }
-}
-
-
 async function generateJournalPrompt(force=false) {
   const promptEl = document.getElementById('journal-prompt-text');
   const refreshBtn = document.getElementById('journal-refresh-btn');
@@ -3488,34 +3443,6 @@ function updateHomeRing() {
 // ═══ JOURNAL ═══
 let journalToday = '';
 let journalUnsaved = false;
-
-async function loadJournalForHome() {
-  try {
-    const now = new Date();
-    const todayStr = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
-    const rows = await supaFetch('journal','GET',null,`?date=eq.${todayStr}`);
-    const entry = rows?.[0];
-    window._journalPrompt = entry?.prompt || '';
-    window._journalWritten = !!(entry?.entry?.trim());
-
-    // Update tile
-    const promptEl = document.getElementById('home-journal-prompt');
-    const streakEl = document.getElementById('home-journal-streak');
-    if(promptEl && entry?.prompt) {
-      const p = entry.prompt;
-      promptEl.textContent = p.length>55 ? p.slice(0,55)+'...' : p;
-    }
-
-    // Calc streak
-    const all = await supaFetch('journal','GET',null,'?order=date.desc&limit=30')||[];
-    const withText = all.filter(e=>e.entry?.trim());
-    const streak = calcJournalStreak(withText);
-    if(streakEl) streakEl.textContent = streak+' day streak';
-
-    // If journal hero is active, re-render
-    if(typeof currentHero!=='undefined' && currentHero==='habits') setHero('habits');
-  } catch(e) { console.log('Journal home load error:', e); }
-}
 
 async function loadJournalForHome() {
   try {
