@@ -3046,14 +3046,25 @@ function renderHeroWorkout(el, color) {
 
 function renderHeroTasks(el, color) {
   const taskData = window._heroTasks || [];
-  const pending = taskData.filter(t=>!t.done);
-  const done = taskData.filter(t=>t.done);
-  el.innerHTML = heroHeader('MISSION CONTROL // TASKS', color) +
+  const now = new Date();
+  const todayStr = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  const todayDow = now.getDay();
+
+  // Filter to today's tasks only — same logic as TODAY tab
+  const todayTasks = taskData.filter(t => {
+    if(t.done) return false;
+    if(t.task_type === 'scheduled') return t.scheduled_date === todayStr;
+    if(t.task_type === 'recurring') return (t.recurring_days||[]).map(Number).includes(todayDow);
+    return true; // ongoing
+  });
+  const done = taskData.filter(t=>t.done).length;
+
+  el.innerHTML = heroHeader("TODAY'S TASKS", color) +
     `<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:14px">
-      <div style="font-family:Orbitron,monospace;font-size:36px;font-weight:900;color:${color};line-height:1">${pending.length}</div>
-      <div style="font-size:9px;color:${color}77;letter-spacing:0.15em">REMAINING · ${done.length} DONE</div>
+      <div style="font-family:Orbitron,monospace;font-size:36px;font-weight:900;color:${color};line-height:1">${todayTasks.length}</div>
+      <div style="font-size:9px;color:${color}77;letter-spacing:0.15em">TODAY · ${done} DONE</div>
     </div>` +
-    (pending.length ? pending.map(t=>`
+    (todayTasks.length ? todayTasks.map(t=>`
       <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(0,245,255,0.06)">
         <div style="width:12px;height:12px;border:1.5px solid ${color}66;border-radius:2px;flex-shrink:0"></div>
         <div style="font-size:11px;color:var(--text);flex:1">${t.text}</div>
@@ -4214,11 +4225,19 @@ function todoCalShowDay(ds) {
 }
 
 function updateBadge() {
-  const active = todos.filter(t => !t.done).length;
+  const now = new Date();
+  const todayStr = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  const todayDow = now.getDay();
+  const todayCount = todos.filter(t => {
+    if(t.done) return false;
+    if(t.task_type === 'scheduled') return t.scheduled_date === todayStr;
+    if(t.task_type === 'recurring') return (t.recurring_days||[]).map(Number).includes(todayDow);
+    return true;
+  }).length;
   const badge = document.getElementById('badge-todo');
-  if (badge) { badge.textContent = active; badge.style.display = active ? '' : 'none'; }
+  if (badge) { badge.textContent = todayCount; badge.style.display = todayCount ? '' : 'none'; }
   const ht = document.getElementById('home-tasks');
-  if(ht) ht.textContent = active; // tasks badge
+  if(ht) ht.textContent = todayCount;
 }
 
 function renderHomeTodos() {
