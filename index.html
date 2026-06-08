@@ -3523,11 +3523,18 @@ async function loadJournalForHome() {
     const todayStr = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
     const rows = await supaFetch('journal','GET',null,`?date=eq.${todayStr}`);
     const entry = rows?.[0];
-    window._journalPrompt = entry?.prompt || '';
-    window._journalWritten = !!(entry?.entry?.trim());
+
+    // Auto-generate prompt if none exists for today
+    if(!entry?.prompt) {
+      await autoGenerateJournalPrompt(todayStr);
+      return; // autoGenerate will call loadJournalForHome again when done
+    }
+
+    window._journalPrompt = entry.prompt;
+    window._journalWritten = !!(entry.entry?.trim());
     const promptEl = document.getElementById('home-journal-prompt');
     const streakEl = document.getElementById('home-journal-streak');
-    if(promptEl && entry?.prompt) {
+    if(promptEl) {
       const p = entry.prompt;
       promptEl.textContent = p.length>55 ? p.slice(0,55)+'...' : p;
     }
@@ -3537,6 +3544,40 @@ async function loadJournalForHome() {
     if(streakEl) streakEl.textContent = streak+' day streak';
     if(typeof currentHero!=='undefined' && currentHero==='habits') setHero('habits');
   } catch(e) { console.log('Journal home load error:', e); }
+}
+
+async function autoGenerateJournalPrompt(todayStr) {
+  try {
+    const now = new Date();
+    const dayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][now.getDay()];
+    const systemPrompt = `You are generating a daily journal prompt for Orin, a young man in his 20s living in Edmonton, Alberta. He is in a relationship, interested in fitness and working out, building software, gaming, and Alberta history. Generate ONE thoughtful, specific journal prompt. The prompt should be grounded and easy to answer — about his current daily life, a recent memory, his relationship, his goals, how he is feeling, something he is looking forward to, or something small and specific from his week. Mix present, past, and future perspectives. Keep it conversational and personal, not generic or therapy-like. The tone should feel like a curious friend asking a real question. Return ONLY the prompt question, nothing else. No preamble, no quotation marks, no explanation.`;
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 150,
+        system: systemPrompt,
+        messages: [{role:'user', content: `Today is ${dayName}. Generate a journal prompt.`}]
+      })
+    });
+    const data = await response.json();
+    const prompt = data.content?.[0]?.text?.trim() || "What's something small that happened today that you want to remember?";
+
+    // Save to Supabase
+    const existing = await supaFetch('journal','GET',null,`?date=eq.${todayStr}`);
+    if(existing?.[0]) {
+      await supaFetch('journal','PATCH',{prompt},`?date=eq.${todayStr}`);
+    } else {
+      await supaFetch('journal','POST',{date:todayStr, prompt, entry:''});
+    }
+
+    // Now reload to update the tile and hero
+    loadJournalForHome();
+  } catch(e) {
+    console.log('Auto prompt generation error:', e);
+  }
 }
 
 async function initJournal() {
