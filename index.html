@@ -2844,7 +2844,7 @@ async function loadSupabaseData() {
     }
     // Journal data handled by loadJournalForHome() — skip here to avoid race condition
 
-    // Sleep data for home tile
+    // Sleep + weight data for home tiles
     const sleepData = await supaGetHealth(1);
     if(sleepData && sleepData.length > 0) {
       const s = sleepData[0];
@@ -2858,6 +2858,9 @@ async function loadSupabaseData() {
         sqEl.textContent = s.sleep_hours ? s.sleep_hours+'h · '+q : '—';
       }
     }
+    // Refresh hero if health is active
+    if(typeof currentHero!=='undefined' && currentHero==='health') setHero('health');
+    if(typeof currentHero!=='undefined' && currentHero==='workout') setHero('workout');
   } catch(e) {
     console.log('Supabase load error:', e);
   }
@@ -3110,31 +3113,73 @@ async function renderHeroHealth(el, color) {
 }
 
 async function renderHeroWorkout(el, color) {
-  // Show exercise list + weekly workout grid
-  const name = document.getElementById('home-workout')?.textContent||'—';
-  const sub  = document.getElementById('home-workout-sub')?.textContent||'—';
-  const exEl = document.getElementById('home-workout-exercises-data');
-  const exHtml = exEl ? exEl.innerHTML : '';
+  el.innerHTML = heroHeader("TODAY'S WORKOUT", color) + `<div style="font-size:9px;color:${color}55;letter-spacing:.15em">LOADING...</div>`;
 
-  // Weekly workout frequency
-  const logs = await supaFetch('workout_logs','GET',null,'?order=date.desc&limit=50')||[];
+  // Fetch today's session directly
+  const now = new Date();
+  const today = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  
+  const [sessions, logs] = await Promise.all([
+    supaFetch('day_sessions','GET',null,`?date=eq.${today}&order=created_at.desc&limit=1`),
+    supaFetch('workout_logs','GET',null,'?order=date.desc&limit=50')
+  ]);
+
+  // Weekly grid
   const DAYS7=['Su','M','Tu','W','Th','F','Sa'];
-  const today=new Date();
   const week=[];
-  for(let i=6;i>=0;i--){const d=new Date(today);d.setDate(today.getDate()-i);week.push({d:d.toISOString().slice(0,10),lbl:DAYS7[d.getDay()]});}
-  const logDates=new Set(logs.map(l=>l.date));
+  for(let i=6;i>=0;i--){const d=new Date(now);d.setDate(now.getDate()-i);week.push({d:d.toISOString().slice(0,10),lbl:DAYS7[d.getDay()]});}
+  const logDates=new Set((logs||[]).map(l=>l.date));
   const weekGrid=week.map(w=>`<div style="display:flex;flex-direction:column;align-items:center;gap:3px">
     <div style="width:28px;height:28px;border-radius:4px;background:${logDates.has(w.d)?color+'33':'rgba(0,245,255,0.05)'};border:1px solid ${logDates.has(w.d)?color+'66':'rgba(0,245,255,0.08)'}"></div>
     <div style="font-size:7px;color:var(--text-muted)">${w.lbl}</div>
   </div>`).join('');
   const weekCount=week.filter(w=>logDates.has(w.d)).length;
 
-  el.innerHTML = heroHeader("TODAY'S WORKOUT", color) +
-    `<div style="font-family:Orbitron,monospace;font-size:clamp(14px,2vw,20px);font-weight:700;color:${color};margin-bottom:2px;letter-spacing:0.06em">${name}</div>
-    <div style="font-size:9px;color:${color}77;letter-spacing:0.1em;margin-bottom:12px">${sub}</div>
-    <div id="home-workout-exercises" style="display:flex;flex-direction:column;gap:5px;margin-bottom:14px">${exHtml}</div>
-    <div style="font-size:7px;letter-spacing:.2em;color:${color}55;margin-bottom:8px">THIS WEEK — ${weekCount} OF 7 DAYS</div>
-    <div style="display:flex;gap:6px">${weekGrid}</div>`;
+  // Get workout name
+  let dayName = '—', progName = '—', exHtml = '';
+  if(sessions?.[0]) {
+    const [days, progs] = await Promise.all([
+      supaFetch('program_days','GET',null,`?id=eq.${sessions[0].program_day_id}`),
+      supaFetch('programs','GET',null,`?id=eq.${sessions[0].program_id}`)
+    ]);
+    dayName = days?.[0]?.name || '—';
+    progName = progs?.[0]?.name || '—';
+    // Load exercises
+    const progExes = await supaFetch('program_exercises','GET',null,`?program_day_id=eq.${sessions[0].program_day_id}&order=order_index.asc`);
+    if(progExes?.length) {
+      const exIds = [...new Set(progExes.map(e=>e.exercise_id))];
+      const exList = await supaFetch('exercises','GET',null,`?id=in.(${exIds.join(',')})`);
+      const exMap = {};
+      exList?.forEach(e=>exMap[e.id]=e);
+      const sorted = [...progExes].sort((a,b)=>{
+        const sa=a.superset_group||'ZZZ', sb=b.superset_group||'ZZZ';
+        return sa!==sb?sa.localeCompare(sb):(a.order_index||0)-(b.order_index||0);
+      });
+      exHtml = sorted.slice(0,5).map(pe=>{
+        const ex=exMap[pe.exercise_id]||{};
+        const ss=pe.superset_group;
+        return `<div style="display:flex;align-items:center;gap:8px;padding:3px 0;border-bottom:1px solid rgba(255,77,109,0.08)">
+          ${ss?`<span style="font-family:Orbitron,monospace;font-size:7px;font-weight:700;color:${color};background:${color}15;border:1px solid ${color}33;width:14px;height:14px;display:flex;align-items:center;justify-content:center;border-radius:2px;flex-shrink:0">${ss}</span>`:'<span style="width:14px;flex-shrink:0"></span>'}
+          <span style="font-size:10px;color:${color}bb;flex:1">${ex.name||'—'}</span>
+          <span style="font-size:9px;color:${color}55">${pe.sets||3}×${pe.reps||10}</span>
+        </div>`;
+      }).join('');
+      if(sorted.length>5) exHtml+=`<div style="font-size:8px;color:${color}44;margin-top:4px">+${sorted.length-5} more</div>`;
+      // Update tiles too
+      const hw=document.getElementById('home-workout'); if(hw) hw.textContent=dayName;
+      const hs=document.getElementById('home-workout-sub'); if(hs) hs.textContent=progName;
+    }
+  }
+
+  const isRestDay = dayName==='—';
+  el.innerHTML = heroHeader(isRestDay?"REST DAY":"TODAY'S WORKOUT", color) +
+    (isRestDay
+      ? `<div style="font-family:Orbitron,monospace;font-size:20px;color:${color};margin-bottom:12px">No workout scheduled</div>`
+      : `<div style="font-family:Orbitron,monospace;font-size:clamp(14px,2vw,20px);font-weight:700;color:${color};margin-bottom:2px;letter-spacing:0.06em">${dayName}</div>
+         <div style="font-size:9px;color:${color}77;letter-spacing:0.1em;margin-bottom:12px">${progName}</div>
+         <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:14px">${exHtml}</div>`) +
+    `<div style="font-size:7px;letter-spacing:.2em;color:${color}55;margin-bottom:8px">THIS WEEK — ${weekCount} OF 7 DAYS</div>
+     <div style="display:flex;gap:6px">${weekGrid}</div>`;
 }
 
 async function renderHeroBudget(el, color) {
