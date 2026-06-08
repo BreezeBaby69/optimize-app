@@ -946,7 +946,7 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
         <div class="nav-item" onclick="navigate('health',this)"><span class="nav-icon">♦</span><span class="nav-label">Health</span></div>
         <div class="nav-item" onclick="navigate('habits',this)"><span class="nav-icon">◇</span><span class="nav-label">Habits</span></div>
         <div class="nav-item" onclick="navigate('reading',this)"><span class="nav-icon">▣</span><span class="nav-label">Reading</span></div>
-        <div class="nav-item" onclick="navigate('notes',this)"><span class="nav-icon">▤</span><span class="nav-label">Notes</span></div>
+
         <div class="sidebar-bottom">
           <div class="sidebar-user">
             <div class="user-avatar">O</div>
@@ -1350,21 +1350,7 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
         </div>
       </div>
 
-      <!-- ═══════════════ NOTES ═══════════════ -->
-      <div class="view" id="view-notes">
-        <div class="page-header">
-          <div class="page-title">NOTES</div>
-          <div class="page-sub">QUICK CAPTURE // KNOWLEDGE BASE</div>
-        </div>
-        <div class="card" style="margin-bottom:16px">
-          <div class="todo-input-row" style="flex-wrap:wrap;gap:8px">
-            <input class="todo-input" id="note-title-input" placeholder="Note title..." style="flex:1;min-width:160px">
-            <input class="todo-input" id="note-body-input" placeholder="Content..." style="flex:2;min-width:200px">
-            <button class="btn" onclick="addNote()">+ NOTE</button>
-          </div>
-        </div>
-        <div class="note-grid" id="note-grid"></div>
-      </div>
+
       </main>
     </div>
   </div>
@@ -1377,7 +1363,7 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
   <div class="mob-nav-item" onclick="navigate('health',this,'mob')"><span class="mob-icon">♦</span><span class="mob-label">Health</span></div>
   <div class="mob-nav-item" onclick="navigate('habits',this,'mob')"><span class="mob-icon">◇</span><span class="mob-label">HABITS</span></div>
   <div class="mob-nav-item" onclick="navigate('reading',this,'mob')"><span class="mob-icon">▣</span><span class="mob-label">Reading</span></div>
-  <div class="mob-nav-item" onclick="navigate('notes',this,'mob')"><span class="mob-icon">▤</span><span class="mob-label">Notes</span></div>
+
 </div>
 
 <!-- ═══════ SLEEP LOG MODAL ═══════ -->
@@ -2200,7 +2186,7 @@ function goTo(toIdx, fromDrag) {
 
 // Navigate by page name — finds and activates the correct sidebar item
 function navigateTo(page) {
-  const pages = ['home','todo','budget','health','habits','reading','notes'];
+  const pages = ['home','todo','budget','health','habits','reading'];
   const idx = pages.indexOf(page);
   if (idx === -1) return;
   const sidebarItems = document.querySelectorAll('#sidebar .nav-item');
@@ -3338,7 +3324,6 @@ function navigate(page, el, mode='desk') {
   currentPage = page;
   if (page === 'habits') renderHabits();
   if (page === 'todo') renderTodos();
-  if (page === 'notes') renderNotes();
   if (page === 'health') { renderWeightLog(); initWeightWheel(); }
   if (page === 'budget') loadBudgetData();
 }
@@ -3966,35 +3951,9 @@ function renderWeightLog() {
 }
 
 // ── NOTES ──
-const NOTE_COLORS = ['cyan','orange','green','red'];
-let notes = store.get('notes') || [
-  { id:1, title:'Training Camp Prep', body:'Focus on conditioning and mobility. Shoulder needs ortho consult before heavy pressing.', color:'orange', date:'May 30' },
-  { id:2, title:'Book Notes — Atomic Habits', body:'1% better every day. Identity-based habits. Make it obvious, attractive, easy, satisfying.', color:'cyan', date:'May 28' },
-  { id:3, title:'Budget Goal', body:'Target 35% savings rate by end of Q3. Cut dining out to under $150/month.', color:'green', date:'May 25' },
-];
 
-function addNote() {
-  const title = document.getElementById('note-title-input').value.trim();
-  const body = document.getElementById('note-body-input').value.trim();
-  if (!title) return;
-  const now = new Date();
-  notes.unshift({ id:Date.now(), title, body, color: NOTE_COLORS[notes.length % 4], date: `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][now.getMonth()]} ${now.getDate()}` });
-  document.getElementById('note-title-input').value = '';
-  document.getElementById('note-body-input').value = '';
-  store.set('notes', notes);
-  renderNotes();
-}
 
-function renderNotes() {
-  const grid = document.getElementById('note-grid');
-  if (!grid) return;
-  grid.innerHTML = notes.map(n => `
-    <div class="note-card ${n.color}">
-      <div class="note-card-title">${n.title}</div>
-      <div class="note-card-body">${n.body}</div>
-      <div class="note-card-date">${n.date}</div>
-    </div>`).join('');
-}
+
 
 // ── PAGES (reading) ──
 let pagesRead = store.get('pagesRead') || 84;
