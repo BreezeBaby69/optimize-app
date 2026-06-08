@@ -2964,16 +2964,6 @@ function heroHeader(label, color) {
   return `<div style="font-size:8px;letter-spacing:0.25em;color:${color}99;margin-bottom:6px">${label}</div>`;
 }
 
-function renderHeroWorkout(el, color) {
-  const name = document.getElementById('home-workout')?.textContent||'—';
-  const sub  = document.getElementById('home-workout-sub')?.textContent||'—';
-  const exEl = document.getElementById('home-workout-exercises-data');
-  const exHtml = exEl ? exEl.innerHTML : '';
-  el.innerHTML = heroHeader("TODAY'S WORKOUT", color) +
-    `<div style="font-family:Orbitron,monospace;font-size:clamp(14px,2vw,22px);font-weight:700;color:${color};letter-spacing:0.06em;margin-bottom:3px">${name}</div>
-    <div style="font-size:9px;color:${color}77;letter-spacing:0.1em;margin-bottom:14px">${sub}</div>
-    <div id="home-workout-exercises" style="display:flex;flex-direction:column;gap:5px">${exHtml}</div>`;
-}
 
 function renderHeroTasks(el, color) {
   const taskData = window._heroTasks || [];
@@ -3003,26 +2993,6 @@ function renderHeroTasks(el, color) {
       </div>`).join('') : `<div style="font-size:9px;color:var(--text-muted);letter-spacing:0.15em;padding:8px 0">ALL TASKS COMPLETE ✓</div>`);
 }
 
-function renderHeroBudget(el, color) {
-  const net = document.getElementById('home-net')?.textContent||'—';
-  const sub = document.getElementById('home-net-sub')?.textContent||'—';
-  const cats = window._heroBudgetCats || [];
-  el.innerHTML = heroHeader('BUDGET // MONTHLY OVERVIEW', color) +
-    `<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:14px">
-      <div style="font-family:Orbitron,monospace;font-size:36px;font-weight:900;color:${color};line-height:1">${net}</div>
-      <div style="font-size:9px;color:${color}77;letter-spacing:0.12em">${sub.toUpperCase()}</div>
-    </div>` +
-    (cats.length ? cats.slice(0,5).map(cat=>`
-      <div style="margin-bottom:8px">
-        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-          <span style="font-size:10px;color:var(--text-secondary)">${cat.name}</span>
-          <span style="font-family:Orbitron,monospace;font-size:10px;color:var(--text)">${cat.amt}</span>
-        </div>
-        <div style="height:2px;background:rgba(0,245,255,0.08);border-radius:1px">
-          <div style="height:100%;width:${cat.pct}%;background:${cat.color||color};border-radius:1px;transition:width .6s ease"></div>
-        </div>
-      </div>`).join('') : `<div style="font-size:9px;color:var(--text-muted);letter-spacing:0.15em">OPEN BUDGET TAB TO LOAD DATA</div>`);
-}
 
 function renderHeroReading(el, color) {
   const pct = document.getElementById('home-read-pct')?.textContent||'—';
