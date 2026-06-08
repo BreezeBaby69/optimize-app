@@ -1095,8 +1095,8 @@ html, body { width:100%; height:100%; background:var(--bg); color:var(--text-pri
         <!-- Filter + sort bar -->
         <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
           <div style="display:flex;gap:4px">
-            <button class="todo-filter-btn active" id="tf-all" onclick="setTodoFilter('all',this)">ALL</button>
-            <button class="todo-filter-btn" id="tf-today" onclick="setTodoFilter('today',this)">TODAY</button>
+            <button class="todo-filter-btn" id="tf-all" onclick="setTodoFilter('all',this)">ALL</button>
+            <button class="todo-filter-btn active" id="tf-today" onclick="setTodoFilter('today',this)">TODAY</button>
             <button class="todo-filter-btn" id="tf-active" onclick="setTodoFilter('active',this)">ACTIVE</button>
             <button class="todo-filter-btn" id="tf-done" onclick="setTodoFilter('done',this)">DONE</button>
           </div>
@@ -3785,7 +3785,7 @@ const store = {
 
 // ── TO-DO ──
 let todos = [];
-let todoFilter = 'all';
+let todoFilter = 'today';
 let todoCatFilter = '';
 let focusModeOn = false;
 let editingTodoId = null;
@@ -3806,8 +3806,24 @@ async function loadTodosFromSupabase() {
       }
     }
     const rows = await supaFetch('todos','GET',null,'?done=eq.false&order=created_at.desc') || [];
-    const done = await supaFetch('todos','GET',null,'?done=eq.true&order=done_at.desc&limit=20') || [];
-    todos = [...rows, ...done];
+    const done = await supaFetch('todos','GET',null,'?done=eq.true&order=done_at.desc&limit=50') || [];
+    const allTodos = [...rows, ...done];
+
+    // Reset recurring tasks that were completed on a previous day
+    const now = new Date();
+    const todayStr = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+    const toReset = allTodos.filter(t =>
+      t.task_type === 'recurring' &&
+      t.done &&
+      t.done_at &&
+      t.done_at.slice(0,10) !== todayStr
+    );
+    for(const t of toReset) {
+      await supaFetch('todos','PATCH',{done:false,done_at:null},`?id=eq.${t.id}`);
+      t.done = false; t.done_at = null;
+    }
+
+    todos = allTodos;
     renderTodos();
     updateBadge();
   } catch(e) { console.log('Todo load error:', e); todos=[]; renderTodos(); }
